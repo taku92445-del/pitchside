@@ -1,3 +1,11 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0f0d">
+</head>
+<body>
 <title>Pitchside チーム管理</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,6 +47,22 @@ button{cursor:pointer}
 .brand b{font-family:var(--display);font-size:22px;letter-spacing:.06em;font-weight:700}
 .brand small{display:block;font-size:10px;color:var(--muted);letter-spacing:.12em;margin-top:-4px}
 .nav{display:flex;flex-direction:column;gap:2px}
+body.cloud [data-role],body.cloud .side-foot .role,body.cloud #resetBtn{display:none!important}
+body.gated{overflow:hidden}body.gated #app,body.gated #tabbar{visibility:hidden}
+#gate{position:fixed;inset:0;z-index:200;overflow-y:auto;background:var(--bg);padding:max(28px,env(safe-area-inset-top)) 16px 40px}
+#gate[hidden]{display:none}
+.gbox{max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.gbrand{display:flex;align-items:center;gap:10px;margin:8px 0 14px}.gbrand b{font-family:var(--display);font-size:24px;letter-spacing:.08em}
+.gbox h1{font-size:22px;margin:4px 0 0}
+.gmsg{font-size:13.5px;color:var(--muted);line-height:1.7}
+.glink{border:0;background:none;color:var(--accent);font:inherit;font-size:13.5px;padding:6px 0;text-align:left;cursor:pointer}.glink.back{color:var(--muted)}
+.gor{display:flex;align-items:center;gap:10px;color:var(--dim);font-size:12px;margin:10px 0 2px}.gor::before,.gor::after{content:"";flex:1;height:1px;background:var(--line)}
+.gcard{display:flex;flex-direction:column;gap:3px;text-align:left;border:1px solid var(--line-2);background:var(--surface);color:inherit;font:inherit;border-radius:14px;padding:14px 16px;cursor:pointer}
+.gcard b{font-size:15px}.gcard span{font-size:12.5px;color:var(--muted);line-height:1.6}.gcard:hover{border-color:var(--accent)}
+.gload{display:flex;align-items:center;gap:12px;color:var(--muted);padding:40px 0}
+.spin{width:20px;height:20px;border-radius:50%;border:2.5px solid var(--line-2);border-top-color:var(--accent);animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.acct{display:flex;flex-direction:column;gap:3px;padding:10px 2px 0;font-size:12.5px}.acct b{font-size:13.5px}.acct>span{color:var(--muted)}.acct .btn{align-self:flex-start;margin-top:6px}
+.sync::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:var(--accent);vertical-align:1px}.sync.saving::before{background:var(--warn)}.sync.err::before,.sync.off::before{background:var(--bad)}
 .nsec{font-size:10.5px;font-weight:700;letter-spacing:.12em;color:var(--dim);padding:14px 12px 4px}
 .nsec:first-child{padding-top:2px}
 .msec{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--accent);margin:18px 0 8px}
@@ -834,6 +858,7 @@ textarea.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px
     <div class="side-foot">
       <div class="role field"><label class="lbl" for="roleSide">使っている人</label><select id="roleSide" data-role></select></div>
       <button class="reset" id="resetBtn" type="button">サンプルデータに戻す</button>
+      <div id="acct"></div>
     </div>
   </aside>
   <header class="topbar">
@@ -851,11 +876,17 @@ textarea.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
 (function(){
 "use strict";
 /* ============ utils ============ */
 const KEY='pitchside-team-v1';
+const CLOUD=!!(window.firebase&&window.firebase.initializeApp)&&!/^(file:|about:)/.test(location.protocol);
+const C={ready:false,uid:null,cid:null,mem:null,club:null,remote:{},timer:null,unsubs:[],pins:{},pinSig:'',sync:'ok'};
+const emptyMed=()=>({blood:'',aFood:'',aMed:'',aOther:'',epi:false,epiNote:'',chronic:'',meds:'',hosp:'',hospTel:'',note:''});
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -1018,7 +1049,7 @@ function seed(){
 let S;
 function load(){try{const t=localStorage.getItem(KEY);if(t){const o=JSON.parse(t);if(o&&o.v===7)return o}}catch(e){}return seed()}
 let saveWarned=false;
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){if(!saveWarned){saveWarned=true;setTimeout(()=>toast('保存できませんでした。端末の空き容量がいっぱいの可能性があります。管理画面からバックアップを取ってください'),50)}}}
+function save(){if(CLOUD){saveCycle();if(C.ready){clearTimeout(C.timer);C.timer=setTimeout(cloudFlush,350)}return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){if(!saveWarned){saveWarned=true;setTimeout(()=>toast('保存できませんでした。端末の空き容量がいっぱいの可能性があります。管理画面からバックアップを取ってください'),50)}}}
 S=load();
 const ui={view:'home',role:'s0',squad:'all',pos:'all',attDate:TODAY,repFilter:'all',carFilter:'all',ch:'team',cv:null,csick:false,plan:0,mkSel:null,showOpp:true,match:null,memoF:'all',mKind:'good',tool:'move',arSel:null,sq:null,alg:false,driSex:null,driPal:null};
 try{const u=JSON.parse(localStorage.getItem(KEY+'-ui')||'{}');if(u.squad&&(u.squad==='all'||['A','B','C','D'].includes(u.squad)))ui.squad=u.squad;if(u.role&&(S.staff.some(s=>s.id===u.role)||S.players.some(p=>p.id===u.role)))ui.role=u.role;if(u.view)ui.view=u.view}catch(e){}
@@ -2213,7 +2244,7 @@ const z2h=v=>String(v||'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCod
 const newPin=()=>{const used=new Set([...S.players,...S.staff].map(x=>x.pin));let p;do{p=String(1000+Math.floor(Math.random()*9000))}while(used.has(p));return p};
 const newCode=()=>{const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let c='';for(let i=0;i<6;i++)c+=A[Math.floor(Math.random()*A.length)];return c};
 const inviteOf=sq=>{S.invites=S.invites||{};if(!S.invites[sq]){S.invites[sq]=newCode();save()}return S.invites[sq]};
-const joinUrl=code=>`https://pitchside.example/join/${code}`;
+const joinUrl=code=>CLOUD?`${location.origin}${location.pathname}?join=${code}`:`https://pitchside.example/join/${code}`;
 function findSq(v){v=String(v||'').trim();if(!v)return null;const u=v.toUpperCase().replace(/チーム$/,'').replace(/ＴＥＡＭ|TEAM/,'').trim();const q=S.squads.find(x=>x.id===u||x.name===v||x.name.replace(/チーム$/,'')===v.replace(/チーム$/,''));return q?q.id:null}
 const sqMembers=sq=>[...S.players.filter(p=>p.squad===sq).sort(byPos).map(p=>({k:'p',x:p})),...S.staff.filter(st=>st.squads!=='all'&&st.squads.includes(sq)).map(st=>({k:'s',x:st}))];
 function copyText(t,msg){try{navigator.clipboard.writeText(t).then(()=>toast(msg||'コピーしました'),()=>toast('コピーできませんでした。長押しで選んでコピーしてください'))}catch(e){toast('コピーできませんでした。長押しで選んでコピーしてください')}}
@@ -2310,7 +2341,7 @@ V.members=()=>{
         <div class="invite">${qr?`<div class="qr" aria-label="招待用のQRコード">${qr}</div>`:'<div class="qr empty">QRコードを表示できませんでした</div>'}
           <div class="stack" style="min-width:0"><div><div class="lbl">招待コード</div><div class="code tnum">${code}</div></div>
             <div><div class="lbl">招待リンク</div><div class="url">${esc(url)}</div></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" data-a="copyLink" data-t="${esc(url)}">${ic('copy',14)}リンクをコピー</button><button class="btn" data-a="joinDemo" data-k="${sq}">参加画面を試す</button></div></div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" data-a="copyLink" data-t="${esc(url)}">${ic('copy',14)}リンクをコピー</button>${CLOUD?'':`<button class="btn" data-a="joinDemo" data-k="${sq}">参加画面を試す</button>`}</div></div></div>
         <div class="note-s" style="margin-top:12px">LINEのグループに貼る、練習でQRを見せる、などで配ってください。参加する人は、名簿から自分の名前を選び、4桁の参加番号を入れます。番号は1人ずつ違うので、他の人になりすますことはできません。</div>
         <div class="note-s" style="color:var(--warn)">リンクはプロトタイプ用の見本です。本番のアプリでは実際に参加できるリンクになります。</div></div>
       <div class="card" style="align-self:start"><div class="card-h"><h3>参加状況</h3><span class="sub tnum">${jn}/${mem.length}名</span></div>
@@ -2602,6 +2633,218 @@ function backupCard(){return `<div class="card" style="margin-top:16px"><div cla
   <div class="note-s" style="margin-bottom:10px">今はデータがこの端末のブラウザの中だけに保存されています。ブラウザの履歴を消すとデータも消えるので、ときどきバックアップを取ってください。</div>
   <div class="chips" style="gap:8px"><button class="btn" data-a="bkDown">${ic('report',14)}ファイルに書き出す</button><button class="btn" data-a="bkCopy">${ic('copy',14)}文字としてコピー</button><button class="btn ghost" data-a="bkOpen">${ic('right',14)}バックアップから戻す</button></div>
   <div id="bkArea" hidden style="margin-top:12px"><textarea id="bkIn" class="mono" rows="5" placeholder="コピーしておいたバックアップをここに貼り付け"></textarea><div class="chips" style="gap:8px;margin-top:8px;align-items:center"><label class="btn ghost" style="cursor:pointer">${ic('report',14)}ファイルを選ぶ<input type="file" id="bkFile" accept=".json,application/json,text/plain" hidden></label><button class="btn danger" data-a="bkRestore">今のデータを置きかえて戻す</button></div><div class="note-s">戻すと、今このアプリに入っているデータはすべてバックアップの内容に置きかわります。</div></div></div>`}
+/* ============ cloud (Firebase) ============ */
+const FB_CFG={apiKey:"AIzaSyDNo7FOzn6VnPLQNSq7AbhjYZSz0oPs_UE",authDomain:"pitchside-ae50b.firebaseapp.com",projectId:"pitchside-ae50b",storageBucket:"pitchside-ae50b.firebasestorage.app",messagingSenderId:"1082820067850",appId:"1:1082820067850:web:404420f197255edf6915f3"};
+const LOCAL_ONLY=['cycle'];
+const SHM={att:'m',cond:'m',sessions:'m',wbgt:'m',life:'d',fuel:'d'};
+const SHA={messages:['m','ts'],reports:['d','date']};
+const isPlain=o=>!!o&&typeof o==='object'&&!Array.isArray(o);
+function encV(v){
+  if(Array.isArray(v)){if(v.length&&v.every(x=>isPlain(x)&&typeof x.id==='string'&&x.id)){const o={};v.forEach((x,i)=>{o[x.id]=Object.assign(encV(x),{_i:i})});return o}return {__j:JSON.stringify(v)}}
+  if(isPlain(v)){const o={};for(const k in v){if(v[k]===undefined||k==='')continue;o[k]=encV(v[k])}return o}
+  return v===undefined?null:v}
+function decV(v){
+  if(!isPlain(v))return v;
+  if(typeof v.__j==='string'){try{return JSON.parse(v.__j)}catch(e){return []}}
+  const ks=Object.keys(v);
+  if(ks.length&&ks.every(k=>isPlain(v[k])&&typeof v[k]._i==='number'))return ks.map(k=>v[k]).sort((a,b)=>a._i-b._i).map(x=>{const y=decV(x);delete y._i;return y});
+  const o={};ks.forEach(k=>o[k]=decV(v[k]));return o}
+function stripPins(arr){return (arr||[]).map(x=>{const y=Object.assign({},x);delete y.pin;return y})}
+function toDocs(st){const out={};
+  for(const k in st){if(LOCAL_ONLY.includes(k)||st[k]===undefined)continue;let v=st[k];
+    if(k==='players'||k==='staff')v=stripPins(v);
+    if(SHM[k]&&isPlain(v)){for(const dk in v){const p=SHM[k]==='m'?dk.slice(0,7):dk.slice(0,10),id=k+'@'+p;(out[id]=out[id]||{k,sh:true,d:SHM[k]==='m'?p+'-01':p,raw:{}}).raw[dk]=v[dk]}}
+    else if(SHA[k]&&Array.isArray(v)){const [g,f]=SHA[k];v.forEach(x=>{const ds=f==='ts'?iso(new Date(x.ts||Date.now())):String(x[f]||TODAY);const p=g==='m'?ds.slice(0,7):ds.slice(0,10),id=k+'@'+p;(out[id]=out[id]||{k,sh:true,d:g==='m'?p+'-01':p,arr:[]}).arr.push(x)})}
+    else out[k]={k,sh:false,d:'',val:v}}
+  for(const id in out){const o=out[id];o.v=encV(o.raw||o.arr||o.val);if(o.val===undefined&&!o.raw&&!o.arr)o.v=null;delete o.raw;delete o.arr;delete o.val}
+  return out}
+function fromDocs(rem){const st={};
+  for(const id in rem){const r=rem[id],k=r.k||id.split('@')[0];
+    if(r.sh){const x=decV(r.v);if(SHA[k])st[k]=(st[k]||[]).concat(Array.isArray(x)?x:[]);else st[k]=Object.assign(st[k]||{},isPlain(x)?x:{})}
+    else st[k]=decV(r.v)}
+  for(const k in SHA){if(st[k])st[k].sort((a,b)=>k==='messages'?(a.ts||0)-(b.ts||0):String(a.date).localeCompare(String(b.date)));else st[k]=[]}
+  for(const k in SHM)if(!st[k])st[k]={};
+  return st}
+const SAME={};
+function dd(a,b,depth){
+  if(isPlain(a)&&isPlain(b)&&depth<14){const p={};let n=0;
+    for(const k in b){const s=(k in a)?dd(a[k],b[k],depth+1):b[k];if(s!==SAME){p[k]=s;n++}}
+    for(const k in a)if(!(k in b)){p[k]=firebase.firestore.FieldValue.delete();n++}
+    return n?p:SAME}
+  return JSON.stringify(a)===JSON.stringify(b)?SAME:b}
+const cutoff=()=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-1);return iso(d)};
+const cycKey=()=>KEY+'-cycle-'+(C.uid||'x');
+function loadCycle(){try{return JSON.parse(localStorage.getItem(cycKey())||'{}')||{}}catch(e){return {}}}
+function saveCycle(){try{if(S&&S.cycle)localStorage.setItem(cycKey(),JSON.stringify(S.cycle))}catch(e){}}
+function setSync(s){C.sync=s;const el=document.getElementById('syncSt');if(el){el.className='sync '+s;el.textContent={ok:'クラウドに保存済み',saving:'保存中…',err:'保存できませんでした',off:'オフライン（つながると保存されます）'}[s]||''}}
+function errMsg(e){const c=(e&&e.code)||'';return ({'auth/email-already-in-use':'このメールアドレスはもう登録されています。下の「ログイン」から入ってください。','auth/invalid-email':'メールアドレスの形が正しくありません。','auth/weak-password':'パスワードは6文字以上にしてください。','auth/invalid-credential':'メールアドレスかパスワードが違います。','auth/wrong-password':'メールアドレスかパスワードが違います。','auth/user-not-found':'メールアドレスかパスワードが違います。','auth/too-many-requests':'何度も失敗したので、しばらく待ってからもう一度試してください。','auth/network-request-failed':'通信できませんでした。電波のよい所でもう一度試してください。','permission-denied':'権限がありません。','unavailable':'通信できませんでした。電波のよい所でもう一度試してください。'})[c]||('エラーが起きました（'+(c||(e&&e.message)||'不明')+'）')}
+function cloudFlush(){
+  clearTimeout(C.timer);C.timer=null;if(!C.ready||!C.cid)return;
+  saveCycle();
+  const docs=toDocs(S),col=C.db.collection('clubs').doc(C.cid).collection('state');
+  let batch=C.db.batch(),ops=0;const commits=[];
+  const push=()=>{if(ops){commits.push(batch.commit());batch=C.db.batch();ops=0}};
+  for(const id in docs){const L=docs[id],R=C.remote[id];const patch=R?dd(R.v,L.v,0):L.v;if(patch===SAME)continue;
+    batch.set(col.doc(id),{v:patch,k:L.k,sh:L.sh,d:L.d,at:Date.now(),by:C.uid},{merge:true});ops++;C.remote[id]={k:L.k,sh:L.sh,d:L.d,v:L.v};if(ops>=300)push()}
+  for(const id in C.remote){const R=C.remote[id];if(R.sh&&!docs[id]){batch.delete(col.doc(id));ops++;delete C.remote[id];if(ops>=300)push()}}
+  if(isStaff()){const pins={};[...S.players,...S.staff].forEach(x=>{if(x.pin)pins[x.id]=String(x.pin)});const sig=JSON.stringify(pins);if(sig!==C.pinSig){C.pinSig=sig;C.pins=pins;batch.set(C.db.doc(`clubs/${C.cid}/meta/pins`),{m:pins,at:Date.now()});ops++}}
+  push();
+  if(!commits.length)return;
+  setSync(navigator.onLine===false?'off':'saving');
+  Promise.all(commits).then(()=>setSync('ok')).catch(e=>{console.error(e);setSync('err');toast('クラウドに保存できませんでした：'+errMsg(e))});
+  clearTimeout(C.auxT);C.auxT=setTimeout(cloudSyncAux,2500);
+}
+async function cloudSyncAux(){
+  if(!C.ready||!isStaff())return;
+  try{
+    const inv={};SQ.forEach(q=>{const code=inviteOf(q);inv[code]={cid:C.cid,sq:q,sqName:sqName(q),club:(C.club&&C.club.name)||'',minor:parseInt(sqAge(q))<18,people:sqMembers(q).map(({k,x})=>({id:x.id,k,name:x.name,num:k==='p'?x.num:null,role:k==='s'?x.role:null,joined:!!x.joined}))}});
+    const keys={};[...S.players,...S.staff].forEach(x=>{if(x.pin&&!x.joined)keys[x.id+'_'+x.pin]=1});
+    const mref=C.db.doc(`clubs/${C.cid}/meta/aux`),ms=await mref.get(),prev=ms.exists?ms.data():{inv:{},keys:{}};prev.inv=prev.inv||{};prev.keys=prev.keys||{};
+    let b=C.db.batch(),n=0;const cs=[];const add=f=>{f(b);n++;if(n%300===0){cs.push(b.commit());b=C.db.batch()}};
+    for(const c in inv)if(JSON.stringify(inv[c])!==JSON.stringify(prev.inv[c]))add(x=>x.set(C.db.doc('invites/'+c),inv[c]));
+    for(const c in prev.inv)if(!inv[c])add(x=>x.delete(C.db.doc('invites/'+c)));
+    for(const k in keys)if(!prev.keys[k])add(x=>x.set(C.db.doc(`clubs/${C.cid}/joinkeys/${k}`),{at:Date.now()}));
+    for(const k in prev.keys)if(!keys[k])add(x=>x.delete(C.db.doc(`clubs/${C.cid}/joinkeys/${k}`)));
+    if(!n)return;
+    add(x=>x.set(mref,{inv,keys,at:Date.now()}));
+    cs.push(b.commit());await Promise.all(cs);
+  }catch(e){console.error('aux',e)}
+}
+async function cloudUnjoin(pid){if(!C.ready)return;try{const qs=await C.db.collection(`clubs/${C.cid}/members`).where('personId','==',pid).get();const b=C.db.batch();qs.forEach(d=>b.delete(d.ref));b.delete(C.db.doc(`clubs/${C.cid}/claims/${pid}`));await b.commit()}catch(e){console.error(e);toast('参加の取り消しをクラウドに反映できませんでした：'+errMsg(e))}}
+function stopListen(){(C.unsubs||[]).forEach(f=>{try{f()}catch(e){}});C.unsubs=[]}
+function startListen(){
+  stopListen();C.remote={};C.ready=false;const staffMem=['admin','staff'].includes(C.mem.role);
+  C.got=staffMem?[false,false,false]:[false,false];C.pins={};
+  gateShow('loading','データを読み込んでいます…');
+  const col=C.db.collection('clubs').doc(C.cid).collection('state');
+  const done=i=>{C.got[i]=true;if(C.got.every(Boolean))applyRemote()};
+  const h=i=>snap=>{if(C.timer)cloudFlush();snap.docChanges().forEach(ch=>{const id=ch.doc.id;if(ch.type==='removed')delete C.remote[id];else{const d=ch.doc.data();C.remote[id]={k:d.k,sh:d.sh,d:d.d,v:d.v}}});if(!snap.metadata.hasPendingWrites||!C.ready)done(i)};
+  const err=e=>{console.error(e);stopListen();C.ready=false;gateGo('login',e.code==='permission-denied'?'このクラブのデータを見る権限がなくなりました。スタッフに確認するか、招待コードからもう一度参加してください。':errMsg(e))};
+  C.unsubs=[col.where('sh','==',false).onSnapshot(h(0),err),col.where('d','>=',cutoff()).onSnapshot(h(1),err)];
+  if(staffMem)C.unsubs.push(C.db.doc(`clubs/${C.cid}/meta/pins`).onSnapshot(s=>{C.pins=(s.exists&&s.data().m)||{};C.pinSig=JSON.stringify(C.pins);done(2)},err));
+}
+function applyRemote(){
+  const first=!C.ready,cyc=loadCycle();const nS=fromDocs(C.remote);
+  if(!nS.players||!nS.staff||!nS.squads||!nS.squads.length){if(first)gateGo('login','クラブのデータが見つかりません。');return}
+  nS.cycle=cyc;[...nS.players,...nS.staff].forEach(x=>{if(C.pins[x.id])x.pin=C.pins[x.id]});
+  S=nS;SQ=S.squads.map(q=>q.id);
+  if(!P(C.mem.personId)&&!SF(C.mem.personId)){stopListen();gateGo('login','あなたの名前がチームの名簿から消されています。スタッフに確認してください。');return}
+  ui.role=C.mem.personId;
+  if(first){C.ready=true;gateHide();ui.view='home';migrate();
+    const me_=P(ui.role)||SF(ui.role);if(me_&&!me_.joined){me_.joined=Date.now();if(C.consent)me_.consent=C.consent;save()}C.consent=null;
+    render(true);setSync('ok');if(isStaff())setTimeout(cloudSyncAux,1500)}
+  else{const a=document.activeElement,typing=a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName);if(typing)renderShell();else render(false)}
+}
+/* ---- gate (login / join / create) ---- */
+const G={step:'loading',msg:'',err:'',code:'',inv:null,pick:null,q:'',busy:false};
+function gateShow(step,msg){G.step=step;G.msg=msg||'';gateRender()}
+function gateGo(step,err){G.step=step;G.err=err||'';G.busy=false;gateRender()}
+function gateHide(){const g=$('#gate');if(g)g.hidden=true;document.body.classList.remove('gated')}
+function gListHtml(){const q=(G.q||'').replace(/\s/g,'');const ps=(G.inv.people||[]).filter(x=>!q||(x.name||'').replace(/\s/g,'').includes(q)||String(x.num)===q);
+  return ps.map(x=>`<button class="jname" data-a="gPick" data-id="${esc(x.id)}" ${x.joined?'disabled':''}><span class="tnum">${x.k==='p'?esc(x.num??''):''}</span><b>${esc(x.name)}</b><span class="muted">${x.k==='s'?esc(x.role||'スタッフ'):''}${x.joined?' 参加済み':''}</span></button>`).join('')||'<div class="empty">見つかりません</div>'}
+function acctHtml(){const m=P(ui.role)||SF(ui.role);return `<div class="acct"><b>${esc((C.club&&C.club.name)||'')}</b><span>${esc(m?m.name:'')}${m&&SF(m.id)?' ・ '+esc(m.role):''}</span><span id="syncSt" class="sync ${C.sync}">${{ok:'クラウドに保存済み',saving:'保存中…',err:'保存できませんでした',off:'オフライン（つながると保存されます）'}[C.sync]||''}</span><button class="btn sm ghost" data-a="logout">ログアウト</button></div>`}
+function gateRender(){
+  let g=$('#gate');if(!g){g=document.createElement('div');g.id='gate';document.body.appendChild(g)}
+  g.hidden=false;document.body.classList.add('gated');
+  const brand=`<div class="gbrand"><svg width="34" height="34" viewBox="0 0 30 30" fill="none" aria-hidden="true"><rect x="1.5" y="4.5" width="27" height="21" rx="3" stroke="var(--accent)" stroke-width="1.8"/><path d="M15 4.5v21" stroke="var(--accent)" stroke-width="1.8"/><circle cx="15" cy="15" r="3.6" stroke="var(--accent)" stroke-width="1.8"/></svg><b>PITCHSIDE</b></div>`;
+  const err=G.err?`<div class="jerr">${esc(G.err)}</div>`:'';const msg=G.msg?`<div class="gmsg">${esc(G.msg)}</div>`:'';
+  const busy=G.busy?'disabled':'';let b='';
+  if(G.step==='loading')b=`<div class="gload"><span class="spin"></span>${esc(G.msg||'読み込んでいます…')}</div>`;
+  else if(G.step==='login')b=`<h1>ログイン</h1>${msg}<form class="form" id="gLogin" novalidate><div class="field"><label for="gEmail">メールアドレス</label><input type="email" id="gEmail" autocomplete="email" inputmode="email"></div><div class="field"><label for="gPass">パスワード</label><input type="password" id="gPass" autocomplete="current-password"></div>${err}<button class="btn pri wide" type="submit" ${busy}>ログイン</button></form>
+    <button class="glink" data-a="gReset">パスワードを忘れたとき</button>
+    <div class="gor"><span>はじめて使う方</span></div>
+    <button class="gcard" data-a="gTo" data-k="join1"><b>招待コードで参加する</b><span>選手・スタッフの方。チームから届いたコードと参加番号を使います</span></button>
+    <button class="gcard" data-a="gTo" data-k="create"><b>新しくクラブを作る</b><span>代表の方。クラブを作って、部員を招待します</span></button>`;
+  else if(G.step==='join1')b=`<button class="glink back" data-a="gTo" data-k="${C.uid?'acct':'login'}">← 戻る</button><h1>招待コードで参加</h1>${msg}<form class="form" id="gJoin1" novalidate><div class="field"><label for="gCode">招待コード（6文字）</label><input type="text" id="gCode" class="bigin" maxlength="6" autocapitalize="characters" autocomplete="off" value="${esc(G.code)}" placeholder="例 K7Q2XM"></div>${err}<button class="btn pri wide" type="submit" ${busy}>次へ</button></form><div class="note-s">招待コードは、監督・マネージャーから届いたリンクやQRコードに入っています。</div>`;
+  else if(G.step==='join2'){
+    b=`<button class="glink back" data-a="gTo" data-k="join1">← 戻る</button><h1>${esc(G.inv.club||'')} ${esc(G.inv.sqName||'')}</h1><div class="gmsg">自分の名前を選んでください。</div><input type="search" id="gQ" placeholder="名前や背番号でさがす" value="${esc(G.q)}" style="margin-bottom:10px"><div class="jlist" id="gList">${gListHtml()}</div><div class="note-s" style="margin-top:10px">名前がないときは、監督・マネージャーに名簿への追加をお願いしてください。</div>`}
+  else if(G.step==='join3'){const x=G.pick,minor=x.k==='p'&&G.inv.minor;
+    b=`<button class="glink back" data-a="gTo" data-k="join2">← 戻る</button><h1>${esc(x.name)}さんとして参加</h1><form class="form" id="gJoin3" novalidate>
+      <div class="field"><label for="gPin">参加番号（4けた）</label><input type="text" id="gPin" class="bigin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000"><div class="note-s" style="margin-top:4px">スタッフから1人ずつ伝えられる番号です。</div></div>
+      ${C.uid?`<div class="gmsg">ログイン中：${esc(C.email||'')}</div>`:`<div class="field"><label for="gEmail">メールアドレス（ログインに使います）</label><input type="email" id="gEmail" autocomplete="email" inputmode="email"></div><div class="field"><label for="gPass">パスワード（6文字以上）</label><input type="password" id="gPass" autocomplete="new-password"></div>`}
+      <div class="agree"><b>このアプリに記録する情報と、見られる人</b><ul><li>名前・背番号・連絡先・緊急連絡先：チームのスタッフ</li><li>出欠・体調・けが：チームのスタッフ（練習の安全のため）</li><li>睡眠・食事・体重・進路・医療の情報：スタッフと共有するか自分だけにするかを「プライバシー設定」で選べます</li><li>女子選手の月経の記録：本人のスマホの中だけに保存され、クラウドには送られません</li></ul><div>記録した情報は、チームの活動と、あなたの体調・安全の管理だけに使います。チームを離れるときは、監督・マネージャーに伝えると削除できます。</div></div>
+      <label class="toggle accent"><input type="checkbox" id="gAg1" ${G.ag1?'checked':''}><span class="sw"></span>内容を読んで同意します</label>
+      ${minor?`<label class="toggle accent"><input type="checkbox" id="gAg2" ${G.ag2?'checked':''}><span class="sw"></span>保護者（親）にこの内容を伝えて、同意をもらいました</label>`:''}
+      ${err}<button class="btn pri wide" type="submit" ${busy}>${G.busy?'参加しています…':'同意して参加する'}</button></form>`}
+  else if(G.step==='create')b=`<button class="glink back" data-a="gTo" data-k="${C.uid?'acct':'login'}">← 戻る</button><h1>新しくクラブを作る</h1><div class="gmsg">あなたがクラブの代表（すべてのチームを管理できる人）になります。</div><form class="form" id="gCreate" novalidate>
+      <div class="field"><label for="gClub">クラブ・部の名前</label><input type="text" id="gClub" placeholder="例 青葉高校サッカー部"></div>
+      <div class="two"><div class="field"><label for="gName">あなたの名前</label><input type="text" id="gName" placeholder="例 山田 太郎"></div><div class="field"><label for="gRole">役割</label><select id="gRole">${['クラブ代表','監督','コーチ','マネージャー'].map(r=>`<option>${r}</option>`).join('')}</select></div></div>
+      ${C.uid?`<div class="gmsg">ログイン中：${esc(C.email||'')}</div>`:`<div class="field"><label for="gEmail">メールアドレス</label><input type="email" id="gEmail" autocomplete="email" inputmode="email"></div><div class="field"><label for="gPass">パスワード（6文字以上）</label><input type="password" id="gPass" autocomplete="new-password"></div>`}
+      <label class="toggle accent"><input type="checkbox" id="gSample" checked><span class="sw"></span>見本のデータ（8チーム・200人）を入れて試す</label>
+      <div class="note-s" style="margin-top:-4px">まず試すときはオンがおすすめです。本番で使うときはオフにして、自分のチームを1から作ってください。</div>
+      ${err}<button class="btn pri wide" type="submit" ${busy}>${G.busy?'作成しています…':'クラブを作る'}</button></form>`;
+  else if(G.step==='acct')b=`<h1>クラブに参加していません</h1>${msg||'<div class="gmsg">このアカウントは、まだどのクラブにも参加していません。</div>'}${err}<div class="gmsg">ログイン中：${esc(C.email||'')}</div>
+    <button class="gcard" data-a="gTo" data-k="join1"><b>招待コードで参加する</b><span>選手・スタッフの方</span></button><button class="gcard" data-a="gTo" data-k="create"><b>新しくクラブを作る</b><span>代表の方</span></button><button class="glink" data-a="gOut">ログアウト</button>`;
+  g.innerHTML=`<div class="gbox">${brand}${b}</div>`;
+  const f=g.querySelector('input:not([type=checkbox])');if(f&&G.step!=='join2'&&!('ontouchstart' in window))f.focus();
+}
+async function enterFromUser(){
+  try{gateShow('loading','クラブを確認しています…');
+    const us=await C.db.doc('users/'+C.uid).get();const cid=us.exists?us.data().cid:null;
+    if(!cid){G.code?gateGo('join1'):gateGo('acct');return}
+    const m=await C.db.doc(`clubs/${cid}/members/${C.uid}`).get();
+    if(!m.exists){G.msg='クラブへの参加が取り消されています。招待コードから、もう一度参加してください。';gateGo('acct');return}
+    C.cid=cid;C.mem=m.data();const club=await C.db.doc('clubs/'+cid).get();C.club=club.exists?club.data():{name:''};startListen();
+  }catch(e){console.error(e);gateGo('login',errMsg(e))}
+}
+async function ensureAccount(){if(C.uid)return true;const em=($('#gEmail')||{}).value||'',pw=($('#gPass')||{}).value||'';
+  if(!em.trim()||!pw){G.err='メールアドレスとパスワードを入れてください';return false}
+  if(pw.length<6){G.err='パスワードは6文字以上にしてください';return false}
+  const cr=await C.auth.createUserWithEmailAndPassword(em.trim(),pw);C.uid=cr.user.uid;C.email=cr.user.email;return true}
+async function gateSubmit(id){
+  G.err='';
+  if(id==='gLogin'){const em=$('#gEmail').value.trim(),pw=$('#gPass').value;if(!em||!pw){gateGo('login','メールアドレスとパスワードを入れてください');return}
+    G.busy=true;gateRender();try{await C.auth.signInWithEmailAndPassword(em,pw)}catch(e){gateGo('login',errMsg(e))}return}
+  if(id==='gJoin1'){const code=z2h($('#gCode').value).toUpperCase().replace(/[^A-Z0-9]/g,'');G.code=code;if(code.length!==6){gateGo('join1','招待コードは6文字です');return}
+    G.busy=true;gateRender();try{const s=await C.db.doc('invites/'+code).get();if(!s.exists){gateGo('join1','この招待コードは見つかりません。新しいコードになっていないか、スタッフに確認してください');return}G.inv=s.data();G.q='';gateGo('join2')}catch(e){gateGo('join1',errMsg(e))}return}
+  if(id==='gJoin3'){const pin=z2h($('#gPin').value).replace(/\D/g,'');const g2=$('#gAg2');G.ag1=$('#gAg1').checked;G.ag2=!!(g2&&g2.checked);
+    if(pin.length!==4){gateGo('join3','参加番号は4けたの数字です');return}
+    if(!$('#gAg1').checked||(g2&&!g2.checked)){gateGo('join3',g2?'2つとも確認してから進んでください':'同意のチェックを入れてください');return}
+    G.busy=true;C.busy=true;const em=($('#gEmail')||{}).value,pw=($('#gPass')||{}).value;gateRender();if($('#gEmail'))$('#gEmail').value=em||'';if($('#gPass'))$('#gPass').value=pw||'';
+    try{if(!await ensureAccount()){C.busy=false;gateGo('join3',G.err);return}}catch(e){C.busy=false;gateGo('join3',errMsg(e));return}
+    const x=G.pick,cid=G.inv.cid,b=C.db.batch();
+    b.set(C.db.doc(`clubs/${cid}/members/${C.uid}`),{personId:x.id,pin,role:x.k==='p'?'player':'staff',name:x.name,at:Date.now()});
+    b.set(C.db.doc(`clubs/${cid}/claims/${x.id}`),{uid:C.uid,at:Date.now()});
+    b.set(C.db.doc('users/'+C.uid),{cid,at:Date.now()});
+    try{await b.commit();C.consent={ts:Date.now(),guardian:g2?true:null};C.busy=false;G.code='';try{history.replaceState(null,'',location.pathname)}catch(e){}await enterFromUser()}
+    catch(e){C.busy=false;gateGo('join3',e.code==='permission-denied'?'参加番号が違うか、この名前はすでに別の人が参加しています。番号を確かめて、もう一度入れてください':errMsg(e))}
+    return}
+  if(id==='gCreate'){const club=$('#gClub').value.trim(),name=$('#gName').value.trim(),role=$('#gRole').value,sample=$('#gSample').checked;
+    if(!club||!name){gateGo('create','クラブの名前とあなたの名前を入れてください');return}
+    G.busy=true;C.busy=true;const em=($('#gEmail')||{}).value,pw=($('#gPass')||{}).value;gateRender();
+    ['gClub','gName'].forEach((k,i)=>{$('#'+k).value=[club,name][i]});$('#gRole').value=role;$('#gSample').checked=sample;if($('#gEmail'))$('#gEmail').value=em||'';if($('#gPass'))$('#gPass').value=pw||'';
+    try{if(!await ensureAccount()){C.busy=false;gateGo('create',G.err);return}}catch(e){C.busy=false;gateGo('create',errMsg(e));return}
+    try{
+      if(sample){S=seed();SQ=S.squads.map(q=>q.id);migrate(true)}
+      else{S={v:7,squads:[{id:'A',name:'Aチーム',gender:'m'}],staff:[{id:'s0',name,role,squads:'all'}],players:[],sessions:{},att:{},cond:{},injuries:[],reports:[],careers:{},messages:[],settings:{lateLimit:3},matches:[],life:{},fuel:{},events:[],rsvp:{},ruleAck:{},wbgt:{},invites:{},x2:1,medSeeded:1};SQ=['A'];S.staff[0].pin=newPin();migrate(true)}
+      const a=S.staff.find(x=>x.squads==='all')||S.staff[0];a.name=name;a.role=role;a.joined=Date.now();a.consent={ts:Date.now(),guardian:null};
+      const ref=C.db.collection('clubs').doc(),cid=ref.id,b=C.db.batch();
+      b.set(ref,{name:club,owner:C.uid,at:Date.now()});
+      b.set(C.db.doc(`clubs/${cid}/members/${C.uid}`),{personId:a.id,pin:'',role:'admin',name,at:Date.now()});
+      b.set(C.db.doc(`clubs/${cid}/claims/${a.id}`),{uid:C.uid,at:Date.now()});
+      b.set(C.db.doc('users/'+C.uid),{cid,at:Date.now()});
+      await b.commit();
+      const docs=toDocs(S);let bb=C.db.batch(),n=0;const cs=[];
+      for(const id in docs){const L=docs[id];bb.set(C.db.doc(`clubs/${cid}/state/${id}`),{v:L.v,k:L.k,sh:L.sh,d:L.d,at:Date.now(),by:C.uid});n++;if(n%200===0){cs.push(bb.commit());bb=C.db.batch()}}
+      const pins={};[...S.players,...S.staff].forEach(x=>{if(x.pin)pins[x.id]=String(x.pin)});bb.set(C.db.doc(`clubs/${cid}/meta/pins`),{m:pins,at:Date.now()});
+      cs.push(bb.commit());await Promise.all(cs);
+      C.busy=false;await enterFromUser();toast('クラブを作りました');
+    }catch(e){console.error(e);C.busy=false;gateGo('create',errMsg(e))}
+    return}
+}
+function cloudInit(){
+  firebase.initializeApp(FB_CFG);C.auth=firebase.auth();C.db=firebase.firestore();
+  try{C.db.settings({ignoreUndefinedProperties:true})}catch(e){}
+  document.body.classList.add('cloud');
+  try{const q=new URLSearchParams(location.search),jc=q.get('join');if(jc)G.code=jc.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6)}catch(e){}
+  gateShow('loading');
+  document.addEventListener('submit',ev=>{const f=ev.target;if(f.closest&&f.closest('#gate')){ev.preventDefault();ev.stopImmediatePropagation();gateSubmit(f.id)}},true);
+  document.addEventListener('input',ev=>{if(ev.target.id==='gQ'){G.q=ev.target.value;const l=$('#gList');if(l)l.innerHTML=gListHtml()}},true);
+  window.addEventListener('online',()=>{if(C.ready)setSync('ok')});window.addEventListener('offline',()=>setSync('off'));
+  C.auth.onAuthStateChanged(u=>{
+    if(!u){stopListen();C.uid=null;C.email=null;C.ready=false;C.cid=null;gateGo(G.code?'join1':'login',G.err);return}
+    C.uid=u.uid;C.email=u.email;if(C.busy||['join3','create'].includes(G.step))return;enterFromUser()});
+}
 const PARENT={dri:'fuel',foods:'fuel'};
 function navItems(){
   const st=isStaff(),p=me();
@@ -2634,13 +2877,14 @@ function renderShell(){
   $('#nav').innerHTML=items.map(x=>{const sec=x.g!==g?`<div class="nsec">${x.g}</div>`:'';g=x.g;return sec+`<button class="${x.v===c2?'on':''}" data-a="nav" data-v="${x.v}" ${x.v===c2?'aria-current="page"':''}>${ic(x.i)}${x.l}${x.c?`<span class="cnt">${x.c}</span>`:''}</button>`}).join('');
   const prim=items.filter(x=>x.t),rest=items.filter(x=>!x.t),moreOn=!prim.some(x=>x.v===c2);
   $('#tabbar').innerHTML=prim.map(x=>`<button class="${x.v===c2?'on':''}" data-a="nav" data-v="${x.v}" aria-label="${x.l}">${ic(x.i,21)}${x.s}${x.c?'<span class="dot"></span>':''}</button>`).join('')+`<button class="${moreOn?'on':''}" data-a="nav" data-v="more" aria-label="その他のメニュー">${ic('grid',21)}その他${rest.some(x=>x.c)?'<span class="dot"></span>':''}</button>`;
+  const ac=$('#acct');if(ac)ac.innerHTML=CLOUD&&C.ready?acctHtml():'';
   const opts=`<optgroup label="スタッフ">${S.staff.map(s=>`<option value="${s.id}">${s.role}　${esc(s.name)}（${s.squads==='all'?'全チーム':s.squads.join('・')}）</option>`).join('')}</optgroup>${SQ.map(k=>`<optgroup label="選手（${sqName(k)}）">${S.players.filter(p=>p.squad===k).sort((a,b)=>a.num-b.num).map(p=>`<option value="${p.id}">${p.num} ${esc(p.name)}</option>`).join('')}</optgroup>`).join('')}`;
   document.querySelectorAll('[data-role]').forEach(s=>{s.innerHTML=opts;s.value=ui.role});
 }
 V.more=()=>{const items=navItems().filter(x=>!x.t);let g='',out='';
   items.forEach(x=>{if(x.g!==g){if(g)out+='</div>';out+=`<div class="msec">${x.g}</div><div class="mgrid">`;g=x.g}
     out+=`<button class="card mbtn hov" data-a="nav" data-v="${x.v}"><span class="mi">${ic(x.i,20)}</span><span class="grow"><b>${x.l}</b>${x.d?`<span>${x.d}</span>`:''}</span>${x.c?'<span class="dotb"></span>':''}${ic('right',15)}</button>`});
-  return head('メニュー','その他','毎日は使わない機能をここにまとめています。')+out+(g?'</div>':'')};
+  return head('メニュー','その他','毎日は使わない機能をここにまとめています。')+(CLOUD&&C.ready?`<div class="card" style="margin-bottom:6px">${acctHtml()}</div>`:'')+out+(g?'</div>':'')};
 function nutTabs(){const v=ui.view;return `<div class="ftabs three" role="tablist" style="margin-bottom:18px">${[['fuel','あなたの栄養・筋トレ','fuel'],['dri','年代別の目安','chart'],['foods','食品の早見表','report']].map(([k,l,i])=>`<button role="tab" aria-selected="${v===k}" class="${v===k?'on':''}" data-a="nav" data-v="${k}">${ic(i,16)}${l}</button>`).join('')}</div>`}
 {const f=V.fuel,d=V.dri,fo=V.foods;V.fuel=()=>nutTabs()+f();V.dri=()=>nutTabs()+d();V.foods=()=>nutTabs()+fo();}
 function squadBar(){
@@ -2809,11 +3053,17 @@ const A={
   bkRestore:e=>{let o;try{o=JSON.parse($('#bkIn').value.trim())}catch(err){toast('バックアップの形式が正しくありません');return}
     if(!o||!Array.isArray(o.players)||!Array.isArray(o.staff)||!o.squads){toast('Pitchsideのバックアップではないようです');return}
     if(!e.classList.contains('arm')){e.classList.add('arm');e.textContent=`選手${o.players.length}名のデータに置きかえます。もう一度押して確定`;return}
+    if(CLOUD){const keep=ui.role;o.cycle=S.cycle;S=o;SQ=S.squads.map(q=>q.id);if(!P(keep)&&!SF(keep)){toast('バックアップにあなたの名前がないため戻せません');return}migrate();cloudFlush();render(true);toast('バックアップから戻しました');return}
     S=o;save();ui.role=(S.staff.find(x=>x.squads==='all')||S.staff[0]).id;ui.view='home';location.reload()},
+  gTo:e=>{G.err='';if(e.dataset.k!=='acct')G.msg='';gateGo(e.dataset.k)},
+  gPick:e=>{G.pick=(G.inv.people||[]).find(x=>x.id===e.dataset.id);if(G.pick){G.err='';gateGo('join3')}},
+  gReset:async()=>{const em=(($('#gEmail')||{}).value||'').trim();if(!em){gateGo('login','パスワードを再設定するメールアドレスを上の欄に入れてから、もう一度押してください');return}try{await C.auth.sendPasswordResetEmail(em);G.msg=`${em} にパスワード再設定のメールを送りました`;gateGo('login')}catch(e){gateGo('login',errMsg(e))}},
+  gOut:()=>{C.auth.signOut()},
+  logout:e=>{if(!e.classList.contains('arm')){e.classList.add('arm');e.textContent='もう一度押すとログアウト';setTimeout(()=>{if(e.isConnected){e.classList.remove('arm');e.textContent='ログアウト'}},3000);return}if(C.timer)cloudFlush();C.auth.signOut()},
   memDel:e=>{const id=e.dataset.id,x=P(id)||SF(id);if(!x)return;
     if(id===ui.role){toast('いま使っている人は削除できません');return}
     if(!e.classList.contains('arm')){e.classList.add('arm');e.textContent='もう一度押すと削除';setTimeout(()=>{if(e.isConnected){e.classList.remove('arm');e.textContent='削除'}},3000);return}
-    rmMember(id);save();render(false);toast(`${x.name}を削除しました`)},
+    rmMember(id);save();if(CLOUD)cloudUnjoin(id);render(false);toast(`${x.name}を削除しました`)},
   bulkUndo:e=>{const lb=ui.lastBulk;if(!lb)return;
     if(!e.classList.contains('arm')){e.classList.add('arm');e.textContent='もう一度押すと取り消します';setTimeout(()=>{if(e.isConnected){e.classList.remove('arm');e.textContent='登録を取り消す'}},3000);return}
     const n=lb.ids.filter(id=>P(id)||SF(id)).length;lb.ids.forEach(id=>{if(id!==ui.role)rmMember(id)});ui.lastBulk=null;save();render(false);toast(`さっき登録した${n}名を取り消しました`)},
@@ -2826,7 +3076,7 @@ const A={
     S.invites[ui.memSq]=newCode();save();render(false);toast('新しい招待リンクにしました。前のリンクは使えなくなります')},
   newPin:e=>{const x=P(e.dataset.id)||SF(e.dataset.id);if(!x)return;x.pin=newPin();save();render(false);toast(`${x.name}の新しい参加番号：${x.pin}`)},
   unjoin:e=>{if(!e.classList.contains('arm')){e.classList.add('arm');e.textContent='もう一度押すと取り消し';setTimeout(()=>{if(e.isConnected){e.classList.remove('arm');e.textContent='付け直す'}},3000);return}
-    const x=P(e.dataset.id)||SF(e.dataset.id);if(!x)return;x.joined=null;x.consent=null;x.pin=newPin();save();render(false);toast(`${x.name}の参加を取り消しました。新しい参加番号：${x.pin}`)},
+    const x=P(e.dataset.id)||SF(e.dataset.id);if(!x)return;x.joined=null;x.consent=null;x.pin=newPin();save();if(CLOUD)cloudUnjoin(x.id);render(false);toast(`${x.name}の参加を取り消しました。新しい参加番号：${x.pin}`)},
   joinDemo:e=>{const sq=e.dataset.k;ui.join={step:'name',code:inviteOf(sq),sq,tries:0};openDrawer('');joinRender()},
   jCode:()=>{const v=($('#jCode').value||'').trim().toUpperCase(),sq=Object.keys(S.invites||{}).find(k=>S.invites[k]===v);if(!sq){ui.join.err='この招待コードは見つかりません。もう一度確かめてください';ui.join.code=v;joinRender();return}ui.join={step:'name',code:v,sq,tries:0};joinRender()},
   jPick:e=>{ui.join=Object.assign(ui.join,{step:'pin',k:e.dataset.k,id:e.dataset.id,err:'',tries:0});joinRender()},
@@ -2937,7 +3187,7 @@ document.addEventListener('change',ev=>{const t=ev.target;
   if(t.id==='wbgtIn'){const v=parseFloat(t.value);if(isNaN(v))delete S.wbgt[TODAY];else S.wbgt[TODAY]=Math.round(v*10)/10;save();render(false)}
   if(t.id==='ccDoc1'||t.id==='ccDoc6'){const id=(document.querySelector('[data-a=ccUp],[data-a=ccDown],[data-a=recover]')||{}).dataset;const i=id&&S.injuries.find(x=>x.id===id.id);if(i){i[t.id]=t.checked;(i.ccLog=i.ccLog||[]).push({d:TODAY,t:t.id==='ccDoc1'?(t.checked?'医師の診察を受けた':'診察の記録を取り消し'):(t.checked?'医師の許可が出た（ステップ6）':'許可の記録を取り消し')});save();ccDrawer(i.id)}}
   if(t.classList.contains('rsnote')){const p=me(),r=p&&rsOf(t.dataset.id,p.id);if(r){r.note=t.value.trim();save();toast('理由を保存しました')}}
-  if(t.matches('[data-role]')){ui.role=t.value;ui.ch='team';ui.cv=null;ui.attDate=TODAY;if(!isStaff()&&ui.view==='roster')ui.view='home';render(true);toast(isStaff()?`${SF(ui.role).role} ${SF(ui.role).name}として表示中`:`${P(ui.role).name}（選手）として表示中`)}
+  if(t.matches('[data-role]')){if(CLOUD)return;ui.role=t.value;ui.ch='team';ui.cv=null;ui.attDate=TODAY;if(!isStaff()&&ui.view==='roster')ui.view='home';render(true);toast(isStaff()?`${SF(ui.role).role} ${SF(ui.role).name}として表示中`:`${P(ui.role).name}（選手）として表示中`)}
   if(t.id==='attDate'&&t.value){ui.attDate=t.value;render(false)}
   if(t.id==='sessType'){S.sessions[ui.attDate]=t.value;save();render(false)}
   if(t.dataset.note){const d=ui.attDate,id=t.dataset.note;S.att[d]=S.att[d]||{};if(S.att[d][id])S.att[d][id].note=t.value.trim();else if(t.value.trim()){toast('先に出欠を選んでください');t.value=''}save()}
@@ -3043,8 +3293,9 @@ document.addEventListener('keydown',e=>{const m=e.target.closest&&e.target.close
 const rb=$('#resetBtn');rb.addEventListener('click',()=>{if(!rb.classList.contains('arm')){rb.classList.add('arm');rb.textContent='もう一度押すと初期化します';setTimeout(()=>{rb.classList.remove('arm');rb.textContent='サンプルデータに戻す'},3000);return}
   S=seed();ui.squad='all';S.tacticsBy={};SQ=S.squads.map(q=>q.id);SQ.forEach(q=>S.tacticsBy[q]=seedTactics(q));S.matches=seedMatches();S.life=seedLife();S.fuel=seedFuel();seedMed();initExtras();save();rb.classList.remove('arm');rb.textContent='サンプルデータに戻す';ui.role='s0';ui.view='home';render(true);toast('サンプルデータに戻しました')});
 /* 同じブラウザの別タブで開いた画面と同期（スタッフ用と選手用を並べて試せます） */
-window.addEventListener('storage',ev=>{if(ev.key!==KEY||!ev.newValue)return;try{const o=JSON.parse(ev.newValue);if(o&&o.v===7&&o.tacticsBy&&o.matches&&o.life&&o.fuel){const typing=document.activeElement&&/INPUT|TEXTAREA/.test(document.activeElement.tagName)&&ui.view!=='chat';S=o;if(!typing)render(false);else renderShell()}}catch(e){}});
+window.addEventListener('storage',ev=>{if(CLOUD||ev.key!==KEY||!ev.newValue)return;try{const o=JSON.parse(ev.newValue);if(o&&o.v===7&&o.tacticsBy&&o.matches&&o.life&&o.fuel){const typing=document.activeElement&&/INPUT|TEXTAREA/.test(document.activeElement.tagName)&&ui.view!=='chat';S=o;if(!typing)render(false);else renderShell()}}catch(e){}});
 
+function migrate(seeding){
 SQ=S.squads.map(q=>q.id);
 try{indexedDB.deleteDatabase('pitchside-videos')}catch(e){}
 if(S.matches&&S.matches.some(mt=>mt.videos||mt.memos.some(m=>m.per===undefined))){S.matches.forEach(mt=>{mt.memos.forEach(m=>{if(m.per===undefined){const v=(mt.videos||[]).find(x=>x.id===m.vid);m.per=v&&/後半/.test(v.title)?'後半':v&&/前半/.test(v.title)?'前半':'';if(m.t&&/:/.test(m.t)){const sec=toSec(m.t);m.t=sec==null?'':String(Math.floor(sec/60))}delete m.vid}});delete mt.videos});save()}
@@ -3052,8 +3303,10 @@ if(!S.tacticsBy){S.tacticsBy={};SQ.forEach(q=>S.tacticsBy[q]=seedTactics(q));sav
 if(!S.matches){S.matches=seedMatches();save()}
 if(!S.life){S.life=seedLife();save()}
 if(!S.fuel){S.fuel=seedFuel();save()}
-if(S.players.some(p=>!p.med)){seedMed();save()}
-if([...S.players,...S.staff].some(x=>!x.pin)){const R=rng(99);[...S.players,...S.staff].forEach(x=>{if(!x.pin){x.pin=newPin();x.joined=R()<(x.squad==='A'||x.squads==='all'||(Array.isArray(x.squads)&&x.squads.includes('A'))?.85:.55)?Date.now()-Math.floor(R()*20)*864e5:null}});SQ.forEach(q=>inviteOf(q));save()}
+if(S.players.some(p=>!p.med)){if(!S.medSeeded&&(!CLOUD||seeding)){seedMed()}else S.players.forEach(p=>{if(!p.med)p.med=emptyMed()});S.medSeeded=1;save()}else if(!S.medSeeded){S.medSeeded=1}
+if((!CLOUD||seeding||isStaff())&&[...S.players,...S.staff].some(x=>!x.pin)){const R=rng(99);[...S.players,...S.staff].forEach(x=>{if(!x.pin){x.pin=newPin();x.joined=(CLOUD&&!seeding)?null:R()<(x.squad==='A'||x.squads==='all'||(Array.isArray(x.squads)&&x.squads.includes('A'))?.85:.55)?Date.now()-Math.floor(R()*20)*864e5:null}});SQ.forEach(q=>inviteOf(q));save()}
+initExtras();
+}
 function initExtras(){
   if(!S.rules){S.rules=seedRules();S.ruleAck={};S.players.forEach(p=>{if(Math.random()<.7)S.ruleAck[p.id]=Date.now()-864e5*Math.floor(1+Math.random()*15)})}
   if(!S.ruleAck)S.ruleAck={};
@@ -3063,7 +3316,9 @@ function initExtras(){
   if(!S.rsvp)S.rsvp={};
   if(!S.x2){S.x2=1;seedLineups();S.messages.forEach(m=>{if(m.imp&&!m.read){const r=rng(m.ts%1000);m.read={};chanPlayers(m.ch).forEach(p=>{if(r()<.72)m.read[p.id]=m.ts+36e5})}});;const p=S.players.find(x=>x.squad==='A'&&!activeInj(x.id)&&x.pos==='DF');if(p){S.injuries.push({id:uid(),pid:p.id,part:'脳しんとう（ヘディングの競り合いで頭部を接触）',detail:'受傷当日に脳神経外科を受診。画像検査は異常なし。頭痛は3日目に消失',start:addDays(TODAY,-6),ret:addDays(TODAY,8),status:'active',cc:true,ccStep:2,ccSince:addDays(TODAY,-1),ccDoc1:true,ccLog:[{d:addDays(TODAY,-6),t:'受傷。脳神経外科を受診'},{d:addDays(TODAY,-3),t:'医師の診察を受けた'},{d:addDays(TODAY,-2),t:'ステップ1「症状が出ない範囲の生活」を開始'},{d:addDays(TODAY,-1),t:'ステップ2「軽い有酸素運動」を開始'}]})}}
   save()}
-initExtras();
-render(true);
+if(CLOUD)cloudInit();else{migrate();render(true)}
 })();
 </script>
+
+</body>
+</html>

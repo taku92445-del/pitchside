@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function memPath(cid) { return /databases/$(database)/documents/clubs/$(cid)/members/$(request.auth.uid); }
+    function isMember(cid) { return signedIn() && exists(memPath(cid)); }
+    function isStaffOf(cid) { return isMember(cid) && get(memPath(cid)).data.role in ['admin', 'staff']; }
+
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /invites/{code} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if isStaffOf(request.resource.data.cid);
+      allow delete: if isStaffOf(resource.data.cid);
+    }
+
+    match /clubs/{cid} {
+      allow create: if signedIn() && request.resource.data.owner == request.auth.uid;
+      allow read: if isMember(cid);
+      allow update: if isMember(cid) && get(memPath(cid)).data.role == 'admin';
+
+      match /members/{uid} {
+        allow read: if isMember(cid);
+        allow create: if signedIn() && uid == request.auth.uid && (
+          (request.resource.data.role == 'admin'
+            && getAfter(/databases/$(database)/documents/clubs/$(cid)).data.owner == request.auth.uid)
+          || (request.resource.data.role in ['player', 'staff']
+            && exists(/databases/$(database)/documents/clubs/$(cid)/joinkeys/$(request.resource.data.personId + '_' + request.resource.data.pin))
+            && !exists(/databases/$(database)/documents/clubs/$(cid)/claims/$(request.resource.data.personId))
+            && getAfter(/databases/$(database)/documents/clubs/$(cid)/claims/$(request.resource.data.personId)).data.uid == request.auth.uid)
+        );
+        allow update: if false;
+        allow delete: if isStaffOf(cid);
+      }
+
+      match /claims/{pid} {
+        allow read: if isMember(cid);
+        allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+          && getAfter(/databases/$(database)/documents/clubs/$(cid)/members/$(request.auth.uid)).data.personId == pid;
+        allow delete: if isStaffOf(cid);
+      }
+
+      match /joinkeys/{key} {
+        allow read: if false;
+        allow write: if isStaffOf(cid);
+      }
+
+      match /meta/{doc} {
+        allow read, write: if isStaffOf(cid);
+      }
+
+      match /state/{doc} {
+        allow read, write: if isMember(cid);
+      }
+    }
+  }
+}
