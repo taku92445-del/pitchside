@@ -2671,6 +2671,7 @@ function setSync(s){C.sync=s;const el=document.getElementById('syncSt');if(el){e
 function errMsg(e){const c=(e&&e.code)||'';return ({'auth/email-already-in-use':'このメールアドレスはもう登録されています。下の「ログイン」から入ってください。','auth/invalid-email':'メールアドレスの形が正しくありません。','auth/weak-password':'パスワードは6文字以上にしてください。','auth/invalid-credential':'メールアドレスかパスワードが違います。','auth/wrong-password':'メールアドレスかパスワードが違います。','auth/user-not-found':'メールアドレスかパスワードが違います。','auth/too-many-requests':'何度も失敗したので、しばらく待ってからもう一度試してください。','auth/network-request-failed':'通信できませんでした。電波のよい所でもう一度試してください。','permission-denied':'権限がありません。','unavailable':'通信できませんでした。電波のよい所でもう一度試してください。'})[c]||('エラーが起きました（'+(c||'不明')+'）'+(e&&e.message?'：'+String(e.message).slice(0,180):''))}
 /* ---- phase 2: routing per-person data to access-controlled docs ---- */
 const PD_KEYS=['cond','life','fuel','careers','reports'];
+const PROF_F=['area','phone','emName','emRel','emPhone','note'];
 const isStaffCh=ch=>ch==='staff'||/^st:/.test(ch||'');
 function routeField(p,cat,f){const pv=k=>privOf(p,k)==='self'?'p':'s';
   if(cat==='cond')return f==='note'?pv('condNote'):'s';
@@ -2685,13 +2686,14 @@ function personParts(st,p){const pid=p.id,o={s:{},m:{},p:{},d:{}},lim=addDays(TO
   {const m=st.fuel||{};for(const d in m){if(d<lim)continue;const e=m[d]&&m[d][pid];if(e&&(!Array.isArray(e)||e.length)){const k=routeField(p,'fuel');(o[k].fuel=o[k].fuel||{})[d]=e}}}
   const c=(st.careers||{})[pid];if(c)for(const f in c)put(routeField(p,'career',f),'career',null,f,c[f]);
   if(p.med)for(const f in p.med)put(routeField(p,'med',f),'med',null,f,p.med[f]);
+  PROF_F.forEach(f=>{if(p[f]!==undefined&&p[f]!=='')put('s','prof',null,f,p[f])});
   const reps=(st.reports||[]).filter(r=>r.pid===pid&&String(r.date)>=lim);if(reps.length)o.s.reports=reps;
   const dms=(st.messages||[]).filter(m=>m.ch==='dm:'+pid&&(m.ts||0)>Date.now()-864e5*180);if(dms.length)o.d.msgs=dms;
   return o}
 function toDocs(st){const out={};
   const add=(col,id,meta,v)=>{out[col+'/'+id]=Object.assign({col,id,v:encV(v)},meta)};
   for(const k in st){if(LOCAL_ONLY.includes(k)||PD_KEYS.includes(k)||st[k]===undefined)continue;let v=st[k];
-    if(k==='players'||k==='alumni')v=v.map(x=>{const y=Object.assign({},x);delete y.pin;delete y.med;delete y.staffNote;return y});
+    if(k==='players'||k==='alumni')v=v.map(x=>{const y=Object.assign({},x);delete y.pin;delete y.med;delete y.staffNote;PROF_F.forEach(f=>delete y[f]);return y});
     if(k==='staff')v=stripPins(v);
     if(k==='messages')v=v.filter(m=>!/^dm:/.test(m.ch||'')&&!isStaffCh(m.ch));
     if(SHM[k]&&isPlain(v)){const g={};for(const dk in v){const p=SHM[k]==='m'?dk.slice(0,7):dk.slice(0,10);(g[p]=g[p]||{})[dk]=v[dk]}for(const p in g)add('state',k+'@'+p,{k,sh:true,d:SHM[k]==='m'?p+'-01':p},g[p])}
@@ -2722,6 +2724,7 @@ function fromDocs(rem){const st={};const pds=[],so=[];
     if(isPlain(v.fuel))for(const d in v.fuel)(st.fuel[d]=st.fuel[d]||{})[pid]=v.fuel[d];
     if(isPlain(v.career))st.careers[pid]=Object.assign(st.careers[pid]||{},v.career);
     if(isPlain(v.med)){const p=st.players.find(x=>x.id===pid)||(st.alumni||[]).find(x=>x.id===pid);if(p)p.med=Object.assign(p.med||{},v.med)}
+    if(isPlain(v.prof)){const p=st.players.find(x=>x.id===pid)||(st.alumni||[]).find(x=>x.id===pid);if(p)Object.assign(p,v.prof)}
     if(Array.isArray(v.reports))st.reports=st.reports.concat(v.reports);
     if(Array.isArray(v.msgs))st.messages=st.messages.concat(v.msgs)})}
   so.forEach(([id,r])=>{const v=decV(r.v);if(id==='notes'&&isPlain(v)&&st.players)st.players.concat(st.alumni||[]).forEach(p=>{if(v[p.id])p.staffNote=v[p.id]});else if(/^msg@/.test(id)&&Array.isArray(v))st.messages=st.messages.concat(v)});
