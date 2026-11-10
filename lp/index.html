@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pitchside｜子どもの安全と保護者への連絡を、ひとつのアプリで</title>
+<meta name="description" content="ジュニア・ユースのサッカークラブ指導者向けアプリ。出欠と保護者への連絡に加えて、脳しんとうからの段階的な復帰、暑さ指数、アレルギーなどの医療情報を安全に記録・共有できます。">
+<meta property="og:title" content="Pitchside｜子どもの安全と保護者への連絡を、ひとつのアプリで">
+<meta property="og:description" content="サッカークラブの指導者向け。けが・脳しんとう・熱中症・アレルギーの記録と、保護者への連絡をひとつに。先行利用クラブ募集中。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://taku92445-del.github.io/pitchside/icon-512.png">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F5EF;--card:#FFFFFF;--ink:#15201A;--sub:#4A5650;--line:#E4E3DC;--green:#146C43;--green-d:#0E4D30;--green-l:#EAF3EE;--orange:#B4470F;--orange-d:#8A3409;--orange-l:#FDF0E8;--soft:#F1F1EC}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif;line-height:1.75;font-size:16px;-webkit-text-size-adjust:100%}
+a{color:var(--green)}a:hover{color:var(--green-d)}
+.wrap{max-width:1160px;margin:0 auto;padding:0 20px}
+.h{font-family:'Zen Kaku Gothic New',sans-serif;font-weight:900;line-height:1.4;margin:0}
+h2.h{font-size:clamp(26px,3.6vw,38px);margin-bottom:16px}
+h3{margin:0 0 8px;font-size:19px;line-height:1.5}
+p{margin:0}
+.eyebrow{font-weight:700;color:var(--orange);margin-bottom:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:12px 26px;border-radius:10px;font-weight:700;font-size:17px;text-decoration:none;border:2px solid var(--green);cursor:pointer;font-family:inherit}
+.btn-p{background:var(--green);color:#fff}.btn-p:hover{background:var(--green-d);border-color:var(--green-d);color:#fff}
+.btn-s{background:#fff;color:var(--green)}.btn-s:hover{background:var(--green-l)}
+.btn-o{background:var(--orange);border-color:var(--orange);color:#fff}.btn-o:hover{background:var(--orange-d);border-color:var(--orange-d);color:#fff}
+.btns{display:flex;flex-wrap:wrap;gap:12px}
+header{padding:16px 0}
+header .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Zen Kaku Gothic New',sans-serif;font-weight:900;font-size:22px;color:var(--ink);text-decoration:none}
+nav{display:flex;flex-wrap:wrap;gap:4px 20px;align-items:center;font-size:15px}
+nav a{color:var(--ink);text-decoration:none;padding:8px 0}
+nav .btn{min-height:44px;padding:8px 18px;font-size:15px}
+.hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:48px;align-items:center;padding:48px 20px 80px}
+.hero h1{font-size:clamp(32px,5.4vw,56px);line-height:1.3;margin-bottom:24px}
+.hero .lead{font-size:18px;max-width:34em;margin-bottom:32px}
+.note{font-size:14px;color:var(--sub);margin-top:14px}
+.mock{background:var(--card);border-radius:20px;padding:22px;box-shadow:0 1px 2px rgba(21,32,26,.06),0 12px 32px rgba(21,32,26,.08);display:flex;flex-direction:column;gap:14px;max-width:440px;width:100%;justify-self:center}
+.mock .row{display:flex;justify-content:space-between;gap:12px}
+.alert{background:var(--orange-l);border-radius:12px;padding:14px 16px;display:flex;gap:12px}
+.alert b{color:var(--orange-d)}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;text-align:center}
+.tile{background:var(--soft);border-radius:12px;padding:10px 4px;font-size:13px}
+.tile strong{display:block;font-size:26px;line-height:1.3}
+.tile.g{background:var(--green-l)}.tile.g strong{color:var(--green)}
+.mock .list{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+section{padding:80px 0}
+.white{background:var(--card)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:22px}
+.card{background:var(--card);border-radius:16px;padding:26px}
+.white .card{background:var(--bg)}
+.card svg{margin-bottom:10px}
+.dark{background:var(--green);color:#fff}
+.steps{list-style:none;margin:32px 0 0;padding:0}
+.steps li{border-top:2px solid rgba(255,255,255,.5);padding-top:18px}
+.steps .num{font-family:'Zen Kaku Gothic New',sans-serif;font-weight:900;font-size:40px;line-height:1}
+.steps h3{margin-top:12px}
+.price{display:flex;flex-direction:column;gap:14px;position:relative}
+.price .amt{font-size:40px;font-weight:700;line-height:1.2}
+.price ul{margin:0;padding-left:1.2em}
+.price.rec{border:3px solid var(--green)}
+.badge{position:absolute;top:-14px;left:24px;background:var(--green);color:#fff;font-size:13px;font-weight:700;padding:2px 12px;border-radius:999px}
+.pilot{background:var(--orange-l);border-radius:20px;padding:36px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:24px;align-items:center}
+.pilot .eyebrow{color:var(--orange-d)}
+details{border-bottom:1px solid var(--line);padding:18px 0}
+summary{font-weight:700;font-size:17px;cursor:pointer;min-height:28px}
+details p{margin-top:10px}
+form{background:var(--card);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:20px;max-width:720px;margin:32px auto 0;box-shadow:0 1px 2px rgba(21,32,26,.06),0 12px 32px rgba(21,32,26,.06)}
+.field{display:flex;flex-direction:column;gap:6px}
+label{font-weight:700}
+.req{color:var(--orange-d);font-size:13px;margin-left:6px}
+input,select,textarea{font:inherit;font-size:16px;padding:12px 14px;border:1.5px solid #B9BDB5;border-radius:10px;background:#fff;color:var(--ink);min-height:48px;width:100%}
+input:focus,select:focus,textarea:focus{outline:3px solid rgba(20,108,67,.25);border-color:var(--green)}
+textarea{min-height:110px;resize:vertical}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:20px}
+.small{font-size:14px;color:var(--sub)}
+.msg{border-radius:12px;padding:16px 18px;font-weight:500}
+.msg.ok{background:var(--green-l);color:var(--green-d)}
+.msg.ng{background:#FCE8E6;color:#8F1D14}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+footer{border-top:1px solid var(--line);padding:28px 0;font-size:14px;color:var(--sub)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
+@media (max-width:560px){section{padding:64px 0}.hero{padding:32px 20px 64px}form,.pilot{padding:24px 20px}nav .hide-s{display:none}}
+</style>
+</head>
+<body>
+
+<header>
+<div class="wrap">
+<a class="logo" href="./">
+<svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="#146C43"/><path d="M10 23V9h6.5a4.5 4.5 0 0 1 0 9H10" fill="none" stroke="#F6F5EF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+Pitchside
+</a>
+<nav aria-label="ページ内">
+<a class="hide-s" href="#safety">安全の機能</a>
+<a class="hide-s" href="#price">料金</a>
+<a class="hide-s" href="#faq">よくある質問</a>
+<a class="btn btn-p" href="#apply">先行利用に申し込む</a>
+</nav>
+</div>
+</header>
+
+<main>
+<div class="wrap hero" style="padding-left:20px;padding-right:20px">
+<div>
+<p class="eyebrow">ジュニア・ユースのサッカークラブ指導者のために</p>
+<h1 class="h">子どもの安全と、<br>保護者への連絡を、<br>ひとつのアプリで。</h1>
+<p class="lead">けがや脳しんとう、暑い日の練習、アレルギー。何かあったとき「ちゃんと記録して、ちゃんと伝えていた」と言える状態を、指導者の手間を増やさずにつくります。</p>
+<div class="btns">
+<a class="btn btn-p" href="#apply">先行利用に申し込む</a>
+<a class="btn btn-s" href="../" data-count="lp_click">いますぐ無料で試す</a>
+</div>
+<p class="note">クレジットカードの登録は不要です。スマートフォンのブラウザでそのまま使えます。</p>
+</div>
+<div class="mock" aria-label="アプリの画面イメージ">
+<div class="row"><b>今日の練習</b><span class="small">16:30〜18:30 第2グラウンド</span></div>
+<div class="alert">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B4470F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:3px"><path d="M14 14.8V4a2 2 0 1 0-4 0v10.8a4 4 0 1 0 4 0z"/></svg>
+<div><b>暑さ指数 29：厳重警戒</b><div style="font-size:14px">激しい運動は控え、30分ごとに休憩と水分補給を入れてください。</div></div>
+</div>
+<div class="tiles">
+<div class="tile g"><strong>24</strong>出席</div>
+<div class="tile"><strong>3</strong>欠席</div>
+<div class="tile"><strong>1</strong>未回答</div>
+</div>
+<div class="list">
+<div class="row"><span>脳しんとうから復帰中（1人）</span><b style="color:var(--green)">段階 3 / 6</b></div>
+<div class="row"><span>アレルギーのある選手</span><b>2人</b></div>
+<div class="row"><span>保護者への連絡の既読</span><b>31 / 34</b></div>
+</div>
+<p class="small" style="font-size:12px">画面はイメージです。</p>
+</div>
+</div>
+
+<section class="white">
+<div class="wrap">
+<h2 class="h" style="margin-bottom:32px">こんなこと、ありませんか。</h2>
+<div class="grid">
+<div class="card"><h3>連絡が届いたか分からない</h3><p>LINEで送っても、誰が読んだか分からない。出欠の集計は毎回手作業。</p></div>
+<div class="card"><h3>けがの後、いつ戻していいか迷う</h3><p>頭を打った子を、どの段階で練習に戻すか。判断の記録が残っていない。</p></div>
+<div class="card"><h3>医療情報の扱いが不安</h3><p>アレルギーや持病の情報を、紙やグループLINEで回していて、誰でも見られてしまう。</p></div>
+</div>
+</div>
+</section>
+
+<section id="safety">
+<div class="wrap">
+<p class="eyebrow">安全の機能</p>
+<h2 class="h">「何かあったとき」に、説明できる記録を。</h2>
+<p style="max-width:40em;margin-bottom:32px">日本サッカー協会や日本スポーツ協会の指針をもとに作っています。最終的な判断は、指導者と医療機関が行ってください。</p>
+<div class="grid">
+<div class="card"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#146C43" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg><h3>脳しんとうからの段階的な復帰</h3><p>6つの段階を24時間ずつ進める流れを、選手ごとに記録します。症状が出たら前の段階に戻します。</p></div>
+<div class="card"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#146C43" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><h3>暑さ指数での練習判断</h3><p>暑さ指数（WBGT）を入れると、運動の目安と休憩の取り方を表示し、その日の判断を記録に残します。</p></div>
+<div class="card"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#146C43" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><h3>医療情報は、見られる人を限定</h3><p>アレルギーは指導者全員に、持病やけがの詳細は許可したスタッフだけに。本人と保護者が範囲を選べます。</p></div>
+<div class="card"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#146C43" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><h3>保護者アカウント</h3><p>保護者が自分のスマートフォンで参加し、予定の確認、出欠の回答、体調の入力ができます。</p></div>
+<div class="card"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#146C43" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v12H5l-1 4z"/><path d="M8 9l2 2 4-4"/></svg><h3>連絡の既読と出欠の自動集計</h3><p>誰が読んだか、誰が未回答かがひと目で分かります。未回答の人だけに声をかければ済みます。</p></div>
+<div class="card"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#146C43" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg><h3>卒業・退部したら消せる</h3><p>卒業生として残すか、データを消すかを選べます。必要のない個人情報を持ち続けません。</p></div>
+</div>
+</div>
+</section>
+
+<section class="dark">
+<div class="wrap">
+<h2 class="h">始め方は3つだけ。</h2>
+<ol class="steps grid">
+<li><div class="num">1</div><h3>クラブを作る</h3><p>代表者がメールアドレスで登録し、選手の名前をまとめて貼り付けます。</p></li>
+<li><div class="num">2</div><h3>招待コードを配る</h3><p>6けたの招待コードと、選手ごとの4けたの番号を保護者に渡します。</p></li>
+<li><div class="num">3</div><h3>保護者が同意して参加</h3><p>医療情報の扱いに同意してから参加するので、同意の記録も残ります。</p></li>
+</ol>
+</div>
+</section>
+
+<section id="price">
+<div class="wrap">
+<h2 class="h">料金</h2>
+<p style="margin-bottom:36px">料金はクラブ単位です。選手と保護者は無料で使えます。有料プランは2027年4月に始める予定です。</p>
+<div class="grid">
+<div class="card price"><h3>無料</h3><div><span class="amt">0</span>円</div><ul><li>予定・出欠・連絡</li><li>連絡の既読確認</li><li>30人まで</li></ul></div>
+<div class="card price rec"><span class="badge">おすすめ</span><h3>安全プラン</h3><div><span class="amt">1,980</span>円 / 月（税込）</div><ul><li>無料プランのすべて</li><li>体調の記録・脳しんとうの段階的な復帰</li><li>暑さ指数での練習判断</li><li>医療情報の閲覧の制限</li><li>保護者アカウント</li><li>人数の上限なし</li></ul></div>
+<div class="card price"><h3>クラブプラン</h3><div><span class="amt">4,980</span>円 / 月（税込）</div><ul><li>安全プランのすべて</li><li>学年ごとなど複数のチーム</li><li>管理者の追加</li><li>データの書き出し</li></ul></div>
+</div>
+<p class="note" style="margin-top:20px">年払いは2か月分お得になる予定です。料金は変わることがあります。</p>
+</div>
+</section>
+
+<div class="wrap" style="padding-bottom:80px">
+<div class="pilot">
+<div>
+<p class="eyebrow">先行利用のクラブを5つ募集しています</p>
+<h2 class="h" style="font-size:clamp(22px,3vw,30px);margin-bottom:12px">3か月間、安全プランを無料でお使いください。</h2>
+<p>そのかわり、月に1回30分ほど、使ってみた感想を聞かせてください。いただいた声をもとに、すぐに改善します。</p>
+</div>
+<div><a class="btn btn-o" href="#apply">先行利用に申し込む</a></div>
+</div>
+</div>
+
+<section id="faq" class="white">
+<div class="wrap" style="max-width:820px">
+<h2 class="h" style="margin-bottom:24px">よくある質問</h2>
+<details><summary>アプリのインストールは必要ですか。</summary><p>必要ありません。スマートフォンのブラウザで開けば使えます。ホーム画面に追加すると、アプリのように開けます。</p></details>
+<details><summary>データはどこに保存されますか。</summary><p>Googleのクラウド（Firebase、東京リージョン）に保存します。クラブの外の人は見られません。医療情報は、本人と保護者が選んだ範囲の人だけが見られます。</p></details>
+<details><summary>保護者がスマートフォンを持っていない場合は。</summary><p>指導者が代わりに出欠や体調を入力できます。全員がアプリを使わなくても始められます。</p></details>
+<details><summary>今使っているLINEグループはやめる必要がありますか。</summary><p>やめなくても大丈夫です。まずは出欠と体調の記録だけをPitchsideに移す使い方もできます。</p></details>
+<details><summary>解約はいつでもできますか。</summary><p>いつでも解約できる予定です。解約後は無料プランに戻り、データの書き出しや削除ができます。</p></details>
+</div>
+</section>
+
+<section id="apply">
+<div class="wrap">
+<div style="text-align:center;max-width:720px;margin:0 auto">
+<p class="eyebrow">先行利用の申し込み</p>
+<h2 class="h">まずは、話を聞かせてください。</h2>
+<p>1分で終わります。申し込みのあと、担当からメールでご連絡します。申し込んでも、料金がかかることはありません。</p>
+</div>
+<form id="f" novalidate>
+<div class="two">
+<div class="field"><label for="club">クラブ名<span class="req">必須</span></label><input id="club" name="club" maxlength="80" autocomplete="organization" required></div>
+<div class="field"><label for="name">お名前<span class="req">必須</span></label><input id="name" name="name" maxlength="40" autocomplete="name" required></div>
+</div>
+<div class="field"><label for="email">メールアドレス<span class="req">必須</span></label><input id="email" name="email" type="email" maxlength="120" autocomplete="email" inputmode="email" required></div>
+<div class="two">
+<div class="field"><label for="size">選手の人数</label><select id="size" name="size"><option value="">選んでください</option><option>〜20人</option><option>21〜40人</option><option>41〜80人</option><option>81人以上</option></select></div>
+<div class="field"><label for="tool">今の連絡の方法</label><select id="tool" name="tool"><option value="">選んでください</option><option>LINE</option><option>メール</option><option>ほかのアプリ</option><option>紙・口頭</option><option>その他</option></select></div>
+</div>
+<div class="field"><label for="pain">いま一番困っていること</label><textarea id="pain" name="pain" maxlength="600" placeholder="例：出欠の集計に毎週時間がかかる、けがの情報が共有できていない など"></textarea></div>
+<div class="hp" aria-hidden="true"><label for="web">空欄のままにしてください</label><input id="web" name="web" tabindex="-1" autocomplete="off"></div>
+<p class="small">いただいた情報は、先行利用のご連絡と、サービスの改善のためだけに使います。ほかの目的には使いません。</p>
+<div id="m" role="status" aria-live="polite"></div>
+<div><button class="btn btn-o" type="submit" id="sb">申し込む</button></div>
+</form>
+</div>
+</section>
+</main>
+
+<footer>
+<div class="wrap">
+<span>© 2026 Pitchside</span>
+<span>利用規約・プライバシーポリシー・特定商取引法に基づく表記は、有料プランの開始までに公開します。</span>
+</div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+var CFG={apiKey:"AIzaSyDNo7FOzn6VnPLQNSq7AbhjYZSz0oPs_UE",authDomain:"pitchside-ae50b.firebaseapp.com",projectId:"pitchside-ae50b",storageBucket:"pitchside-ae50b.firebasestorage.app",messagingSenderId:"1082820067850",appId:"1:1082820067850:web:404420f197255edf6915f3"};
+var db=null;
+try{firebase.initializeApp(CFG);db=firebase.firestore()}catch(e){}
+var src='';
+try{src=(new URLSearchParams(location.search).get('src')||'').replace(/[^\w-]/g,'').slice(0,40)}catch(e){}
+function ss(k,v){try{if(v===undefined)return sessionStorage.getItem(k);sessionStorage.setItem(k,v)}catch(e){return null}}
+function bump(doc){
+  if(!db)return;
+  try{db.collection('stats').doc(doc).set({n:firebase.firestore.FieldValue.increment(1)},{merge:true}).catch(function(){})}catch(e){}
+}
+if(!ss('ps_v')){ss('ps_v','1');bump('lp')}
+document.querySelectorAll('[data-count]').forEach(function(a){a.addEventListener('click',function(){bump(a.getAttribute('data-count'))})});
+
+var f=document.getElementById('f'),m=document.getElementById('m'),sb=document.getElementById('sb');
+function show(t,ok){m.className='msg '+(ok?'ok':'ng');m.textContent=t}
+f.addEventListener('submit',function(e){
+  e.preventDefault();
+  if(f.web.value){show('送信しました。ありがとうございます。',true);return}
+  var d={club:f.club.value.trim(),name:f.name.value.trim(),email:f.email.value.trim(),size:f.size.value,tool:f.tool.value,pain:f.pain.value.trim().slice(0,600),src:src};
+  if(!d.club){show('クラブ名を入れてください。',false);f.club.focus();return}
+  if(!d.name){show('お名前を入れてください。',false);f.name.focus();return}
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email)){show('メールアドレスを確かめてください。',false);f.email.focus();return}
+  if(ss('ps_sent')){show('すでに申し込みを受け付けています。ありがとうございます。',true);return}
+  if(!db){show('今は送信できません。時間をおいてもう一度お試しください。',false);return}
+  sb.disabled=true;sb.textContent='送信しています…';
+  d.ts=firebase.firestore.FieldValue.serverTimestamp();
+  db.collection('signups').add(d).then(function(){
+    ss('ps_sent','1');f.reset();
+    show('申し込みを受け付けました。ありがとうございます。1週間以内に、入力いただいたメールアドレスへご連絡します。',true);
+    sb.textContent='送信しました';
+  }).catch(function(){
+    sb.disabled=false;sb.textContent='申し込む';
+    show('送信できませんでした。時間をおいて、もう一度お試しください。',false);
+  });
+});
+})();
+</script>
+</body>
+</html>

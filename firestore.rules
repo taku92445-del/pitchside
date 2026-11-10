@@ -22,6 +22,27 @@ service cloud.firestore {
       allow delete: if isStaffOf(resource.data.cid);
     }
 
+    // 紹介ページの先行利用申し込み：だれでも送れるが、読めるのはFirebaseの管理画面だけ
+    match /signups/{id} {
+      allow read, update, delete: if false;
+      allow create: if request.resource.data.keys().hasOnly(['club', 'name', 'email', 'size', 'tool', 'pain', 'ts', 'src'])
+        && request.resource.data.club is string && request.resource.data.club.size() > 0 && request.resource.data.club.size() <= 80
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 40
+        && request.resource.data.email is string && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$') && request.resource.data.email.size() <= 120
+        && request.resource.data.size is string && request.resource.data.size.size() <= 20
+        && request.resource.data.tool is string && request.resource.data.tool.size() <= 40
+        && request.resource.data.pain is string && request.resource.data.pain.size() <= 600
+        && request.resource.data.src is string && request.resource.data.src.size() <= 40
+        && request.resource.data.ts == request.time;
+    }
+
+    // 紹介ページの閲覧数：1回に1ずつ増やすことだけできる
+    match /stats/{sid} {
+      allow read: if false;
+      allow create: if sid in ['lp', 'lp_click'] && request.resource.data.keys().hasOnly(['n']) && request.resource.data.n == 1;
+      allow update: if sid in ['lp', 'lp_click'] && request.resource.data.keys().hasOnly(['n']) && request.resource.data.n == resource.data.n + 1;
+    }
+
     match /clubs/{cid} {
       allow create: if signedIn() && request.resource.data.owner == request.auth.uid;
       allow read: if isMember(cid);
