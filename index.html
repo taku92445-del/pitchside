@@ -2636,7 +2636,7 @@ function backupCard(){return `<div class="card" style="margin-top:16px"><div cla
 /* ============ cloud (Firebase) ============ */
 const FB_CFG={apiKey:"AIzaSyDNo7FOzn6VnPLQNSq7AbhjYZSz0oPs_UE",authDomain:"pitchside-ae50b.firebaseapp.com",projectId:"pitchside-ae50b",storageBucket:"pitchside-ae50b.firebasestorage.app",messagingSenderId:"1082820067850",appId:"1:1082820067850:web:404420f197255edf6915f3"};
 const LOCAL_ONLY=['cycle'];
-const SHM={att:'m',cond:'m',sessions:'m',wbgt:'m',life:'d',fuel:'d'};
+const SHM={att:'d',cond:'d',sessions:'m',wbgt:'m',life:'d',fuel:'d'};
 const SHA={messages:['m','ts'],reports:['d','date']};
 const isPlain=o=>!!o&&typeof o==='object'&&!Array.isArray(o);
 function encV(v){
@@ -2677,7 +2677,7 @@ const cycKey=()=>KEY+'-cycle-'+(C.uid||'x');
 function loadCycle(){try{return JSON.parse(localStorage.getItem(cycKey())||'{}')||{}}catch(e){return {}}}
 function saveCycle(){try{if(S&&S.cycle)localStorage.setItem(cycKey(),JSON.stringify(S.cycle))}catch(e){}}
 function setSync(s){C.sync=s;const el=document.getElementById('syncSt');if(el){el.className='sync '+s;el.textContent={ok:'クラウドに保存済み',saving:'保存中…',err:'保存できませんでした',off:'オフライン（つながると保存されます）'}[s]||''}}
-function errMsg(e){const c=(e&&e.code)||'';return ({'auth/email-already-in-use':'このメールアドレスはもう登録されています。下の「ログイン」から入ってください。','auth/invalid-email':'メールアドレスの形が正しくありません。','auth/weak-password':'パスワードは6文字以上にしてください。','auth/invalid-credential':'メールアドレスかパスワードが違います。','auth/wrong-password':'メールアドレスかパスワードが違います。','auth/user-not-found':'メールアドレスかパスワードが違います。','auth/too-many-requests':'何度も失敗したので、しばらく待ってからもう一度試してください。','auth/network-request-failed':'通信できませんでした。電波のよい所でもう一度試してください。','permission-denied':'権限がありません。','unavailable':'通信できませんでした。電波のよい所でもう一度試してください。'})[c]||('エラーが起きました（'+(c||(e&&e.message)||'不明')+'）')}
+function errMsg(e){const c=(e&&e.code)||'';return ({'auth/email-already-in-use':'このメールアドレスはもう登録されています。下の「ログイン」から入ってください。','auth/invalid-email':'メールアドレスの形が正しくありません。','auth/weak-password':'パスワードは6文字以上にしてください。','auth/invalid-credential':'メールアドレスかパスワードが違います。','auth/wrong-password':'メールアドレスかパスワードが違います。','auth/user-not-found':'メールアドレスかパスワードが違います。','auth/too-many-requests':'何度も失敗したので、しばらく待ってからもう一度試してください。','auth/network-request-failed':'通信できませんでした。電波のよい所でもう一度試してください。','permission-denied':'権限がありません。','unavailable':'通信できませんでした。電波のよい所でもう一度試してください。'})[c]||('エラーが起きました（'+(c||'不明')+'）'+(e&&e.message?'：'+String(e.message).slice(0,180):''))}
 function cloudFlush(){
   clearTimeout(C.timer);C.timer=null;if(!C.ready||!C.cid)return;
   saveCycle();
