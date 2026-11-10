@@ -1890,7 +1890,7 @@ V.org=()=>{
   const srows=S.staff.map(s=>`<div class="it"><div class="grow"><div class="nm">${esc(s.role)} ${esc(s.name)}</div><div class="meta">${s.squads==='all'?'全チームを見られます':s.squads.map(sqName).join('・')||'担当チームなし'}</div></div><button class="btn sm" data-a="staffEdit" data-id="${s.id}">${ic('edit',13)}編集</button></div>`).join('');
   return head('クラブ代表のみ','チーム・スタッフ管理','チームの数と名前、男子・女子と年代（栄養と筋トレの目安に使います）、各チームの監督・コーチ・マネージャーを決めます。スタッフは担当するチームの情報だけを見られます。')+
   `<div class="grid g2"><div class="card" style="align-self:start"><div class="card-h"><h3>チーム</h3><button class="btn sm pri" data-a="sqAdd">${ic('plus',14)}チームを追加</button></div><div>${rows}</div><div class="note-s" style="margin-top:10px">名前は自由に変えられます（例：トップチーム、U-16）。選手や試合記録が残っているチームは削除できません。</div></div>
-   <div style="align-self:start"><div class="card"><div class="card-h"><h3>スタッフ</h3><button class="btn sm pri" data-a="staffNew">${ic('plus',14)}スタッフを追加</button></div><div class="list">${srows}</div><div class="note-s" style="margin-top:10px">1人のスタッフに複数のチームを担当させることもできます。</div></div>${backupCard()}</div></div>`;
+   <div style="align-self:start"><div class="card"><div class="card-h"><h3>スタッフ</h3><button class="btn sm pri" data-a="staffNew">${ic('plus',14)}スタッフを追加</button></div><div class="list">${srows}</div><div class="note-s" style="margin-top:10px">1人のスタッフに複数のチームを担当させることもできます。</div></div>${backupCard()}${CLOUD&&C.ready&&C.mem&&C.mem.role==='admin'?`<div class="card" style="margin-top:16px"><div class="card-h"><h3>本番用のクラブを作り直す</h3></div><div class="note-s" style="margin-bottom:10px">見本データで試したあと、実際の部員で使い始めるときは、見本データなしの新しいクラブを作ってください。今のクラブには戻れなくなります。</div><button class="btn" data-a="newClub">${ic('plus',14)}本番用の新しいクラブを作る</button></div>`:''}</div></div>`;
 };
 function staffForm(id){
   const st=id?SF(id):{name:'',role:'コーチ',squads:ctxSq()?[ctxSq()]:[]};
@@ -2828,11 +2828,11 @@ function gateRender(){
       <label class="toggle accent"><input type="checkbox" id="gAg1" ${G.ag1?'checked':''}><span class="sw"></span>${gd?'保護者として、内容を読んで同意します':'内容を読んで同意します'}</label>
       ${minor?`<label class="toggle accent"><input type="checkbox" id="gAg2" ${G.ag2?'checked':''}><span class="sw"></span>保護者（親）にこの内容を伝えて、同意をもらいました</label>`:''}
       ${err}<button class="btn pri wide" type="submit" ${busy}>${G.busy?'参加しています…':'同意して参加する'}</button></form>`}
-  else if(G.step==='create')b=`<button class="glink back" data-a="gTo" data-k="${C.uid?'acct':'login'}">← 戻る</button><h1>新しくクラブを作る</h1><div class="gmsg">あなたがクラブの代表（すべてのチームを管理できる人）になります。</div><form class="form" id="gCreate" novalidate>
+  else if(G.step==='create')b=`<button class="glink back" data-a="gTo" data-k="${C.ready?'app':C.uid?'acct':'login'}">← 戻る</button><h1>${C.ready?'本番用の新しいクラブを作る':'新しくクラブを作る'}</h1>${C.ready?`<div class="gmsg">今のクラブ「${esc((C.club&&C.club.name)||'')}」から、新しいクラブに切り替わります。今のクラブには戻れなくなるので、見本データで試していたクラブから本番に移るときに使ってください。</div>`:''}<div class="gmsg">あなたがクラブの代表（すべてのチームを管理できる人）になります。</div><form class="form" id="gCreate" novalidate>
       <div class="field"><label for="gClub">クラブ・部の名前</label><input type="text" id="gClub" placeholder="例 青葉高校サッカー部"></div>
       <div class="two"><div class="field"><label for="gName">あなたの名前</label><input type="text" id="gName" placeholder="例 山田 太郎"></div><div class="field"><label for="gRole">役割</label><select id="gRole">${['クラブ代表','監督','コーチ','マネージャー'].map(r=>`<option>${r}</option>`).join('')}</select></div></div>
       ${C.uid?`<div class="gmsg">ログイン中：${esc(C.email||'')}</div>`:`<div class="field"><label for="gEmail">メールアドレス</label><input type="email" id="gEmail" autocomplete="email" inputmode="email"></div><div class="field"><label for="gPass">パスワード（6文字以上）</label><input type="password" id="gPass" autocomplete="new-password"></div>`}
-      <label class="toggle accent"><input type="checkbox" id="gSample" checked><span class="sw"></span>見本のデータ（8チーム・200人）を入れて試す</label>
+      <label class="toggle accent"><input type="checkbox" id="gSample" ${C.ready?'':'checked'}><span class="sw"></span>見本のデータ（8チーム・200人）を入れて試す</label>
       <div class="note-s" style="margin-top:-4px">まず試すときはオンがおすすめです。本番で使うときはオフにして、自分のチームを1から作ってください。</div>
       ${err}<button class="btn pri wide" type="submit" ${busy}>${G.busy?'作成しています…':'クラブを作る'}</button></form>`;
   else if(G.step==='acct')b=`<h1>クラブに参加していません</h1>${msg||'<div class="gmsg">このアカウントは、まだどのクラブにも参加していません。</div>'}${err}<div class="gmsg">ログイン中：${esc(C.email||'')}</div>
@@ -2876,6 +2876,7 @@ async function gateSubmit(id){
     G.busy=true;C.busy=true;const em=($('#gEmail')||{}).value,pw=($('#gPass')||{}).value;gateRender();
     ['gClub','gName'].forEach((k,i)=>{$('#'+k).value=[club,name][i]});$('#gRole').value=role;$('#gSample').checked=sample;if($('#gEmail'))$('#gEmail').value=em||'';if($('#gPass'))$('#gPass').value=pw||'';
     try{if(!await ensureAccount()){C.busy=false;gateGo('create',G.err);return}}catch(e){C.busy=false;gateGo('create',errMsg(e));return}
+    if(C.timer)cloudFlush();stopListen();C.ready=false;C.cid=null;
     try{
       if(sample){S=seed();SQ=S.squads.map(q=>q.id);migrate(true)}
       else{S={v:7,squads:[{id:'A',name:'Aチーム',gender:'m'}],staff:[{id:'s0',name,role,squads:'all'}],players:[],sessions:{},att:{},cond:{},injuries:[],reports:[],careers:{},messages:[],settings:{lateLimit:3},matches:[],life:{},fuel:{},events:[],rsvp:{},ruleAck:{},wbgt:{},invites:{},x2:1,medSeeded:1};SQ=['A'];S.staff[0].pin=newPin();migrate(true)}
@@ -3173,7 +3174,8 @@ const A={
     if(!e.classList.contains('arm')){e.classList.add('arm');e.textContent=`選手${o.players.length}名のデータに置きかえます。もう一度押して確定`;return}
     if(CLOUD){const keep=ui.role;o.cycle=S.cycle;S=o;SQ=S.squads.map(q=>q.id);if(!P(keep)&&!SF(keep)){toast('バックアップにあなたの名前がないため戻せません');return}migrate();cloudFlush();render(true);toast('バックアップから戻しました');return}
     S=o;save();ui.role=(S.staff.find(x=>x.squads==='all')||S.staff[0]).id;ui.view='home';location.reload()},
-  gTo:e=>{G.err='';if(e.dataset.k!=='acct')G.msg='';gateGo(e.dataset.k)},
+  gTo:e=>{G.err='';if(e.dataset.k!=='acct')G.msg='';if(e.dataset.k==='app'){gateHide();return}gateGo(e.dataset.k)},
+  newClub:()=>{if(C.timer)cloudFlush();G.err='';G.msg='';gateGo('create')},
   gPick:e=>{G.pick=(G.inv.people||[]).find(x=>x.id===e.dataset.id);G.as=null;if(G.pick){G.err='';gateGo('join3')}},
   gReset:async()=>{const em=(($('#gEmail')||{}).value||'').trim();if(!em){gateGo('login','パスワードを再設定するメールアドレスを上の欄に入れてから、もう一度押してください');return}try{await C.auth.sendPasswordResetEmail(em);G.msg=`${em} にパスワード再設定のメールを送りました`;gateGo('login')}catch(e){gateGo('login',errMsg(e))}},
   gOut:()=>{C.auth.signOut()},
