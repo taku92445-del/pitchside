@@ -1,0 +1,36 @@
+# Firestoreのルールと通知用の処理を、Firebaseに自動で反映します。
+# 使うには、リポジトリの Settings → Secrets and variables → Actions に
+#   FIREBASE_SERVICE_ACCOUNT（サービスアカウントの鍵JSON）を登録してください。
+# 通知用の処理（functions）は、Firebaseを「Blazeプラン」にしてから
+#   Variables に ENABLE_FUNCTIONS = true を登録すると反映されます。
+name: Deploy to Firebase
+on:
+  push:
+    branches: [main]
+    paths: ['firestore.rules', 'functions/**', 'firebase.json', '.github/workflows/deploy.yml']
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+    steps:
+      - name: Check key
+        if: env.HAS_KEY != 'true'
+        run: echo "FIREBASE_SERVICE_ACCOUNT が未登録のため、反映をスキップします。"
+      - uses: actions/checkout@v4
+        if: env.HAS_KEY == 'true'
+      - uses: actions/setup-node@v4
+        if: env.HAS_KEY == 'true'
+        with: { node-version: 20 }
+      - uses: google-github-actions/auth@v2
+        if: env.HAS_KEY == 'true'
+        with: { credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' }
+      - run: npm install --prefix functions
+        if: env.HAS_KEY == 'true'
+      - name: Deploy rules
+        if: env.HAS_KEY == 'true'
+        run: npx -y firebase-tools@13 deploy --only firestore:rules --project pitchside-ae50b --non-interactive
+      - name: Deploy functions
+        if: env.HAS_KEY == 'true' && vars.ENABLE_FUNCTIONS == 'true'
+        run: npx -y firebase-tools@13 deploy --only functions --project pitchside-ae50b --non-interactive --force

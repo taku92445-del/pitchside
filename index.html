@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b0f0d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pitchside">
 </head>
 <body>
 <title>Pitchside チーム管理</title>
@@ -63,6 +70,14 @@ body.gated{overflow:hidden}body.gated #app,body.gated #tabbar{visibility:hidden}
 .spin{width:20px;height:20px;border-radius:50%;border:2.5px solid var(--line-2);border-top-color:var(--accent);animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 .acct{display:flex;flex-direction:column;gap:3px;padding:10px 2px 0;font-size:12.5px}.acct b{font-size:13.5px}.acct>span{color:var(--muted)}.acct .btn{align-self:flex-start;margin-top:6px}
 .sync::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:var(--accent);vertical-align:1px}.sync.saving::before{background:var(--warn)}.sync.err::before,.sync.off::before{background:var(--bad)}
+.balrow{display:flex;flex-wrap:wrap;gap:6px}.balrow span{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:999px;background:var(--surface-3);color:var(--dim);font-size:13px;font-weight:600}.balrow span.on{background:var(--accent-soft);color:var(--accent)}
+.lref{display:flex;flex-direction:column}.lr{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line)}.lr:first-child{border-top:0}
+.composer.ro{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--muted);line-height:1.6}
+.gbanner{display:flex;gap:8px;align-items:center;padding:9px 14px;border-radius:12px;background:var(--info-soft);color:var(--info);font-size:13px;font-weight:600;margin-bottom:14px}
+.bell{position:relative;border:0;background:transparent;color:var(--muted);width:40px;height:40px;border-radius:12px;display:grid;place-items:center;cursor:pointer;flex:none}.bell:hover{background:var(--surface-2);color:var(--fg)}
+.bell .bdot{position:absolute;top:4px;right:3px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center}
+.bell.side{width:auto;height:auto;display:flex;gap:10px;justify-content:flex-start;padding:9px 12px;margin:2px 0 8px;font:inherit;font-size:14px;color:var(--muted)}.bell.side .bdot{position:static;margin-left:auto}
+.topbar .bell{margin-left:auto}
 .nsec{font-size:10.5px;font-weight:700;letter-spacing:.12em;color:var(--dim);padding:14px 12px 4px}
 .nsec:first-child{padding-top:2px}
 .msec{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--accent);margin:18px 0 8px}
@@ -854,6 +869,7 @@ textarea.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px
       <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true"><rect x="1.5" y="4.5" width="27" height="21" rx="3" stroke="var(--accent)" stroke-width="1.8"/><path d="M15 4.5v21" stroke="var(--accent)" stroke-width="1.8"/><circle cx="15" cy="15" r="4" stroke="var(--accent)" stroke-width="1.8"/><path d="M1.5 10.5h4v9h-4M28.5 10.5h-4v9h4" stroke="var(--accent)" stroke-width="1.8"/></svg>
       <div><b>PITCHSIDE</b><small>TEAM OPERATIONS</small></div>
     </div>
+    <button class="bell side" id="bellSide" data-a="inbox" aria-label="お知らせ"></button>
     <nav class="nav" id="nav"></nav>
     <div class="side-foot">
       <div class="role field"><label class="lbl" for="roleSide">使っている人</label><select id="roleSide" data-role></select></div>
@@ -866,6 +882,7 @@ textarea.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px
       <svg width="26" height="26" viewBox="0 0 30 30" fill="none" aria-hidden="true"><rect x="1.5" y="4.5" width="27" height="21" rx="3" stroke="var(--accent)" stroke-width="1.8"/><path d="M15 4.5v21" stroke="var(--accent)" stroke-width="1.8"/><circle cx="15" cy="15" r="4" stroke="var(--accent)" stroke-width="1.8"/></svg>
       <div><b>PITCHSIDE</b></div>
     </div>
+    <button class="bell" id="bellTop" data-a="inbox" aria-label="お知らせ"></button>
     <select id="roleTop" data-role aria-label="表示モード"></select>
   </header>
   <main class="main" id="main"><div class="view" id="view"></div></main>
@@ -879,6 +896,7 @@ textarea.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
 <script>
 (function(){
 "use strict";
@@ -921,7 +939,7 @@ const ICON={
  plus:'M12 5v14M5 12h14', x:'M6 6l12 12M18 6L6 18', search:'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3',
  copy:'M9 9h11v11H9zM5 15H4V4h11v1', send:'M22 2L11 13M22 2l-7 20-4-9-9-4z', pin:'M12 17v5M5 17h14l-2-4V5H7v8z',
  alert:'M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z',
- lock:'M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4', check:'M20 6L9 17l-5-5', grid:'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z', sun:'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4', brain:'M12 4a4 4 0 0 0-7.5 2A4 4 0 0 0 4 13a4 4 0 0 0 4 6 4 4 0 0 0 4-1 4 4 0 0 0 4 1 4 4 0 0 0 4-6 4 4 0 0 0-.5-7A4 4 0 0 0 12 4zM12 4v14', rule:'M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6zM8.5 12l2.5 2.5 4.5-5', left:'M15 18l-6-6 6-6', right:'M9 18l6-6-6-6', edit:'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z', arrow:'M5 12h14M13 6l6 6-6 6'
+ lock:'M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4', bell:'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0', check:'M20 6L9 17l-5-5', grid:'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z', sun:'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4', brain:'M12 4a4 4 0 0 0-7.5 2A4 4 0 0 0 4 13a4 4 0 0 0 4 6 4 4 0 0 0 4-1 4 4 0 0 0 4 1 4 4 0 0 0 4-6 4 4 0 0 0-.5-7A4 4 0 0 0 12 4zM12 4v14', rule:'M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6zM8.5 12l2.5 2.5 4.5-5', left:'M15 18l-6-6 6-6', right:'M9 18l6-6-6-6', edit:'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z', arrow:'M5 12h14M13 6l6 6-6 6'
 };
 const ic=(n,s=18)=>`<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[n]}"/></svg>`;
 
@@ -1178,8 +1196,7 @@ function homePlayer(){
       </div>
       <div class="card"><div class="card-h"><h3>直近14日のコンディション</h3></div>${spark(p.id)}</div>
     </div>
-    <div class="card" style="align-self:start">${heatBadge()}<div class="card-h"><h3>チームからの重要連絡</h3><button class="btn sm ghost" data-a="nav" data-v="chat">連絡へ ${ic('right',14)}</button></div>${notices(3)}
-      <div class="card-h" style="margin:16px 0 10px"><h3 style="display:flex;align-items:center;gap:6px">${ic('lock',14)}${sqName(p.squad)} 選手だけの部屋</h3><button class="btn sm ghost" data-a="ch" data-ch="pl:${p.squad}" data-go="1">開く ${ic('right',14)}</button></div>${roomPeek('pl:'+p.squad)}</div>
+    <div class="card" style="align-self:start">${heatBadge()}<div class="card-h"><h3>チームからの重要連絡</h3><button class="btn sm ghost" data-a="nav" data-v="chat">連絡へ ${ic('right',14)}</button></div>${notices(3)}</div>
   </div>`;
 }
 
@@ -1192,8 +1209,12 @@ V.roster=()=>{
     <div class="top">${numB(p,'lg')}<div style="min-width:0;flex:1"><div class="kana">${esc(p.kana)}</div><div class="nm">${esc(p.name)}</div><div style="margin-top:2px;display:flex;align-items:center;gap:6px">${posB(p)}<span class="sqtag ${p.squad}">${sqName(p.squad)}</span><span class="muted" style="font-size:11.5px">${POS[p.pos]}</span></div></div></div>
     <dl><dt>居住地</dt><dd>${esc(p.area)}</dd><dt>電話</dt><dd class="tnum">${esc(p.phone)}</dd><dt>緊急</dt><dd>${esc(p.emName)}（${esc(p.emRel)}）</dd></dl>
     <div class="flags">${medOn()&&hasAllergy(p)?`<span class="pill bad">${ic('alert',11)}アレルギー${medOf(p).epi?'・エピペン':''}</span>`:''}${inj?`<span class="pill warn">離脱 〜${jp(inj.ret)}</span>`:''}${c&&c.sick?'<span class="pill bad">病欠</span>':''}${n>=S.settings.lateLimit?`<span class="pill bad">遅刻 ${n}回</span>`:n>0&&n>=S.settings.lateLimit-1?`<span class="pill warn">遅刻 ${n}回</span>`:''}${p.note?`<span class="pill">${esc(p.note.length>14?p.note.slice(0,14)+'…':p.note)}</span>`:''}</div>
-  </button>`}).join('')}</div><div class="empty" id="rosterEmpty" hidden>条件に合う選手がいません</div>`;
+  </button>`}).join('')}</div><div class="empty" id="rosterEmpty" hidden>条件に合う選手がいません</div>`+alumniCard();
 };
+function alumniCard(){const al=(S.alumni||[]).filter(a=>isAdmin()||allowedSq().includes(a.squad));if(!al.length)return '';
+  return `<div class="card" style="margin-top:18px"><div class="card-h"><h3>卒業生・退部者</h3><button class="btn sm ghost" data-a="alumView">${ui.alum?'閉じる':`${al.length}名を表示`}</button></div>
+    ${ui.alum?`<div class="note-s" style="margin-bottom:8px">卒業・退部した選手は、アプリに入れなくなり、出欠や名簿には表示されません。本人や保護者から削除を頼まれたときや、保管の必要がなくなったときは「完全に削除」で記録をすべて消してください。</div>
+    <div class="list">${al.map(a=>`<div class="it"><span class="grow"><b>${esc(a.name)}</b><span class="muted" style="font-size:12px;margin-left:6px">${esc(sqName(a.squad))} ・ ${a.leftAt?jp(a.leftAt)+'まで在籍':''}</span></span><button class="btn sm ghost" data-a="alumRestore" data-id="${a.id}">名簿に戻す</button><button class="btn sm danger" data-a="alumDel" data-id="${a.id}">完全に削除</button></div>`).join('')}</div>`:''}</div>`}
 function filterRoster(){
   const q=($('#q')?$('#q').value:'').replace(/\s/g,'');let shown=0;
   document.querySelectorAll('#roster .pcard').forEach(el=>{const ok=(ui.pos==='all'||el.dataset.pos===ui.pos)&&(!q||el.dataset.q.includes(q))&&(!ui.alg||el.dataset.alg==='1');el.hidden=!ok;if(ok)shown++});
@@ -1390,7 +1411,7 @@ V.chat=()=>{
   const staff=isStaff(),meId=ui.role;
   const last=ch=>{const m=S.messages.filter(x=>x.ch===ch);return m.length?m[m.length-1]:null};
   const mySq=staff?null:me().squad;
-  const gids=staff?['team',...(ctxSq()?[ctxSq()]:allowedSq()).flatMap(q=>['sq:'+q,'st:'+q]),'staff']:['team','sq:'+mySq,'pl:'+mySq];
+  const gids=staff?['team',...(ctxSq()?[ctxSq()]:allowedSq()).flatMap(q=>['sq:'+q,'st:'+q]),'staff']:['team','sq:'+mySq];
   let chans=gids.map(id=>Object.assign({id},chanDef(id)));const nG=chans.length;
   if(staff)chans=chans.concat(sorted().map(p=>({id:'dm:'+p.id,p,name:p.name,vis:'この選手本人とスタッフだけが見られます',short:'個別',cls:'',l:last('dm:'+p.id)})).sort((a,b)=>(b.l?b.l.ts:0)-(a.l?a.l.ts:0)));
   else chans.push({id:'dm:'+ui.role,name:'スタッフへ個別連絡',vis:'自分と監督・マネージャー・コーチだけが見られます',short:'個別',cls:'',icon:'chat'});
@@ -1404,14 +1425,14 @@ V.chat=()=>{
     const mine=m.from===meId,ed=mine&&ui.editMsg===m.id;
     body+=`<div class="msg ${mine?'me':''} ${m.imp?'imp':''}" data-mid="${m.id}">${!mine?`<span class="who">${esc(fromName(m.from))}</span>`:''}${m.imp?`<span class="imp-tag">${ic('pin',12)}重要</span>`:''}${ed?`<div class="medit"><textarea id="editBox" rows="3" aria-label="メッセージを直す">${esc(m.text)}</textarea><div class="mact"><button class="btn sm ghost" data-a="msgCancel">やめる</button><button class="btn sm pri" data-a="msgSave" data-id="${m.id}">保存</button></div></div>`:`<div class="bub">${esc(m.text)}</div>`}<time>${hm(m.ts)}${m.edited?' ・ 編集済み':''}</time>${rcpt(m)}${mine&&!ed?`<div class="mact"><button data-a="msgEdit" data-id="${m.id}" aria-label="このメッセージを直す">${ic('edit',12)}直す</button><button data-a="msgDel" data-id="${m.id}" aria-label="このメッセージを消す">${ic('x',12)}消す</button></div>`:''}</div>`});
   const chanBtn=c=>{const l=c.l!==undefined?c.l:last(c.id);return `<button class="${c.id===ui.ch?'on':''}" data-a="ch" data-ch="${c.id}">${c.p?numB(c.p,'av'):`<span class="num av" style="color:var(--${c.cls==='warn'?'warn':c.cls==='info'?'info':'accent'})">${ic(c.icon,15)}</span>`}<span class="grow"><b>${esc(c.name)}</b><span>${l?esc(fromName(l.from).split(' ').pop()+'：'+l.text.split('\n')[0]):esc(c.short)}</span></span></button>`};
-  return head(staff?`${esc(SF(ui.role).role)} ${esc(SF(ui.role).name)}`:'チーム連絡','連絡','部屋ごとに見られる人が決まっています。チームの部屋はそのチームの選手とスタッフだけ、「クラブ全体」は全チーム共通です。')+
+  return head(staff?`${esc(SF(ui.role).role)} ${esc(SF(ui.role).name)}`:'チーム連絡','連絡',staff?'チームへのお知らせは、選手が読んだかどうかが分かります。ふだんのやりとりはLINEなどで、残しておきたい大事な連絡はここに書いてください。':'チームからのお知らせが届きます。スタッフへの相談や欠席の連絡は「スタッフへ個別連絡」から送れます。')+
   `<div class="card chat">
     <div class="chans"><div class="sec">グループ</div>${chans.slice(0,nG).map(chanBtn).join('')}<div class="sec">個別メッセージ</div>${chans.slice(nG).map(chanBtn).join('')}</div>
     <div class="thread">
       <div class="thread-h">${ch.p?numB(ch.p):`<span class="num" style="color:var(--${ch.cls==='warn'?'warn':ch.cls==='info'?'info':'accent'})">${ic(ch.icon,18)}</span>`}<div style="min-width:0"><b>${esc(ch.name)}</b><div style="margin-top:2px"><span class="pill ${ch.cls}">${ic(ch.icon==='roster'?'roster':'lock',12)}${esc(ch.vis)}</span></div></div></div>
       <div class="msgs" id="msgs">${body||'<div class="empty" style="margin:auto">まだメッセージはありません。最初のメッセージを送りましょう。</div>'}</div>
-      <div class="composer"><textarea id="msg" rows="1" placeholder="「${esc(ch.name)}」に送信（Enterで送信／Shift+Enterで改行）" aria-label="メッセージ"></textarea>
-        <div class="opts">${staff&&(ui.ch==='team'&&isAdmin()||ui.ch.startsWith('sq:'))?'<label class="toggle accent" style="font-size:12px"><input type="checkbox" id="imp"><span class="sw"></span>重要</label>':''}<button class="btn pri" data-a="send" aria-label="送信">${ic('send',16)}送信</button></div></div>
+      ${!staff&&!ui.ch.startsWith('dm:')?`<div class="composer ro">${ic('lock',14)}<span>ここはスタッフからのお知らせ専用です。質問や連絡は「スタッフへ個別連絡」から送ってください。</span></div>`:`<div class="composer"><textarea id="msg" rows="1" placeholder="「${esc(ch.name)}」に送信（Enterで送信／Shift+Enterで改行）" aria-label="メッセージ"></textarea>
+        <div class="opts">${staff&&(ui.ch==='team'&&isAdmin()||ui.ch.startsWith('sq:'))?'<label class="toggle accent" style="font-size:12px"><input type="checkbox" id="imp" checked><span class="sw"></span>重要（既読を確認）</label>':''}<button class="btn pri" data-a="send" aria-label="送信">${ic('send',16)}送信</button></div></div>`}
     </div>
   </div>`;
 };
@@ -1802,19 +1823,12 @@ function lifeDrawer(pid){
   openDrawer(drHead(numB(p,'lg'),esc(p.name),'睡眠・食事・体重の記録')+(medOn()&&hasAllergy(p)?`<div style="margin-bottom:12px">${allergyBox(p)}</div>`:'')+lifeSummary(pid)+`<div class="dr-foot"><button class="btn" data-a="dm" data-id="${p.id}">${ic('chat',15)}メッセージ</button></div>`);
 }
 function lifePlayer(){
-  const p=me(),e=lifeOf(p.id)||{bed:'',wake:'',sq:null,meals:{b:false,l:false,d:false,s:false},note:'',wt:''};
-  if(ui.sq==null)ui.sq=e.sq;
-  const h=sleepH(e);
-  return head(jp(TODAY),'睡眠・食事・体重','朝起きたら昨夜の睡眠を、1日の終わりに食事を記録しましょう。同じ日に何度でも書き直せます。')+
-  `<div class="card" style="margin-bottom:16px"><div class="form">
-    <div class="two"><div class="field"><label for="lBed">昨夜、寝た時刻</label><input type="time" id="lBed" value="${esc(e.bed)}"></div><div class="field"><label for="lWake">今朝、起きた時刻</label><input type="time" id="lWake" value="${esc(e.wake)}"></div></div>
-    <div class="field"><span class="lab">睡眠時間</span><div><span class="sleepcalc ${h!=null&&h<6?'warn':''}" id="lCalc">${h!=null?h+'時間':'−'}</span></div></div>
-    <div class="field"><span class="lab">ぐっすり眠れたか</span><div class="scorepick" role="group" aria-label="睡眠の質">${[5,4,3,2,1].map(v=>`<button type="button" class="s${v} ${ui.sq===v?'on':''}" data-a="sq" data-v="${v}"><b>${v}</b><span>${['','眠れない','浅い','ふつう','よく眠れた','ぐっすり'][v]}</span></button>`).join('')}</div></div>
-    <div class="field"><span class="lab">今日の食事（食べたものを選ぶ）</span><div class="mealpick">${MEAL.map(([k,s,l])=>`<label><input type="checkbox" id="lm-${k}" ${e.meals&&e.meals[k]?'checked':''}><span><b>${s}</b>${l}</span></label>`).join('')}</div></div>
-    <div class="field"><label for="lNote">食べたもの・気になったこと</label><textarea id="lNote" rows="2" placeholder="例：朝 おにぎり2個と卵焼き／練習前にバナナ">${esc(e.note)}</textarea></div>
-    <div class="field" style="max-width:260px"><label for="lWt">体重（測った日だけ）</label><div style="display:flex;align-items:center;gap:8px"><input type="number" id="lWt" step="0.1" min="30" max="150" value="${e.wt||''}" placeholder="62.4"><span class="muted">kg</span></div><span class="hint">${privOf(p,'weight')==='self'?'体重はいま自分だけが見られます':'体重は自分とスタッフが見られます'}。成長期は体重が増えるのが自然です。急に減ったときは食べる量が足りていないサインです</span></div>
-    <div><button class="btn pri" data-a="saveLife">記録する</button></div>
-  </div></div>`+(medOn()?`<div class="card" style="margin-bottom:16px"><div class="card-h"><h3 style="display:flex;align-items:center;gap:6px">${ic('lock',14)}アレルギー・医療の情報</h3><button class="btn sm" data-a="medEdit">${ic('edit',13)}編集</button></div><div class="stack">${medView(p,t=>`<div class="tnum" style="font-size:13px;margin-top:2px">${esc(t)}</div>`)}</div></div>`:'')+lifeSummary(p.id);
+  const p=me();const days=[];for(let k=0;k<14;k++)days.push(addDays(TODAY,-k));
+  const rows=days.map(d=>{const e=lifeOf(p.id,d)||{},h=sleepH(e),b=e.bal||{},bn=BAL.filter(([k])=>b[k]).length,mn=MEAL.filter(([k])=>e.meals&&e.meals[k]).length;
+    return `<tr><td>${jp(d)}</td><td class="tnum ${h!=null&&h<6?'bad':''}">${h!=null?h+'時間':'<span class="dim">−</span>'}</td><td class="tnum">${e.meals?mn+'回':'<span class="dim">−</span>'}</td><td class="tnum">${e.bal?bn+'/5':'<span class="dim">−</span>'}</td><td class="tnum">${e.wt?e.wt+'kg':'<span class="dim">−</span>'}</td></tr>`}).join('');
+  return head(jp(TODAY),'睡眠・食事・体重','この2週間の記録です。毎日の入力は「今日の記録」からまとめてできます。',`<button class="btn pri" data-a="nav" data-v="today">${ic('check',15)}今日の記録を入れる</button>`)+
+  `<div class="card" style="margin-bottom:16px"><div class="card-h"><h3>直近2週間</h3></div><div class="scroll-x"><table class="wtable"><thead><tr><th>日付</th><th>睡眠</th><th>食事</th><th>バランス</th><th>体重</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="note-s" style="margin-top:8px">中高生のアスリートは睡眠8時間以上が目安です。成長期は体重が増えるのが自然です。</div></div>`+(medOn()?`<div class="card" style="margin-bottom:16px"><div class="card-h"><h3 style="display:flex;align-items:center;gap:6px">${ic('lock',14)}アレルギー・医療の情報</h3><button class="btn sm" data-a="medEdit">${ic('edit',13)}編集</button></div><div class="stack">${medView(p,t=>`<div class="tnum" style="font-size:13px;margin-top:2px">${esc(t)}</div>`)}</div></div>`:'')+lifeSummary(p.id);
 }
 
 /* ============ medical info ============ */
@@ -1851,8 +1865,10 @@ function allergyBox(p){
   const m=medOf(p);if(!hasAllergy(p))return '<div class="pill good" style="align-self:flex-start">アレルギーの登録なし</div>';
   return `<div class="allergy"><div class="t">${ic('alert',14)}アレルギーあり</div>${m.aFood?`<div class="a"><b>食べ物</b>${esc(m.aFood)}</div>`:''}${m.aMed?`<div class="a"><b>薬</b>${esc(m.aMed)}</div>`:''}${m.aOther?`<div class="a"><b>その他</b>${esc(m.aOther)}</div>`:''}${m.epi?`<span class="epi">エピペン所持${m.epiNote?'：'+esc(m.epiNote):''}</span>`:''}</div>`;
 }
+const canMedMe=()=>{const s=SF(ui.role);return !!s&&(s.squads==='all'||s.medOK===true)};
 function medView(p,telFn,skipAlg){
   const m=medOf(p);
+  if(isStaff()&&!canMedMe())return `${skipAlg&&hasAllergy(p)?'':allergyBox(p)}<div class="note-s" style="margin-top:8px">${ic('lock',12)} 血液型・持病・病院などの医療情報は、クラブ代表が許可したスタッフだけが見られます。アレルギーは安全のため全スタッフに表示しています。</div>`;
   return `${skipAlg&&hasAllergy(p)?'':allergyBox(p)}<dl class="kv"><dt>血液型</dt><dd><span class="blood">${esc(m.blood||'不明')}</span></dd><dt>持病・既往歴</dt><dd>${esc(m.chronic)||'<span class="dim">なし</span>'}</dd><dt>常用薬</dt><dd>${esc(m.meds)||'<span class="dim">なし</span>'}</dd><dt>かかりつけ</dt><dd>${esc(m.hosp)||'<span class="dim">未登録</span>'}${m.hospTel?telFn(m.hospTel):''}</dd>${m.note?`<dt>メモ</dt><dd>${esc(m.note)}</dd>`:''}</dl>`;
 }
 function medForm(){
@@ -1886,6 +1902,8 @@ function staffForm(id){
     <div class="field"><span class="lab">担当するチーム</span><div class="checks">${S.squads.map(q=>`<label><input type="checkbox" class="sfSq" value="${q.id}" ${all||st.squads.includes(q.id)?'checked':''}><span>${esc(q.name)}</span></label>`).join('')}</div></div>
     <label class="toggle accent"><input type="checkbox" id="sfAll" ${all?'checked':''}><span class="sw"></span>全チームを見られる（クラブ代表・管理者）</label>
     <div class="note-s">担当していないチームの選手、試合、戦術、連絡は、このスタッフには表示されません。</div>
+    <label class="toggle accent"><input type="checkbox" id="sfMed" ${all||st.medOK?'checked':''}><span class="sw"></span>医療情報（血液型・持病・常用薬・病院）を見られる</label>
+    <div class="note-s">アレルギーは安全のため、すべてのスタッフに表示されます。それ以外の医療情報は、ここをオンにしたスタッフだけが見られます。</div>
     <div class="dim" id="sfErr" style="color:var(--bad)" hidden></div>
     <div class="dr-foot">${id&&id!==ui.role?`<button type="button" class="btn danger" data-a="staffDel" data-id="${id}" style="margin-right:auto">削除</button>`:''}<button type="button" class="btn ghost" data-a="close">キャンセル</button><button type="submit" class="btn pri">保存</button></div>
   </form>`);
@@ -2075,82 +2093,60 @@ function howtoDrawer(name){
     ${aim?`<div class="dr-sec"><h4>ねらい</h4><div>${esc(aim)}</div>${tip?`<div class="note-s">${esc(tip)}</div>`:''}</div>`:''}
     <div class="note-s">図は動きのイメージです。初めて行うときは、スタッフにフォームを見てもらいましょう。</div>`);
 }
-const WTS=[40,45,50,55,60,65,70,75,80];
-function wtTable(fem,band,lv,curW){
-  if(KIDS.includes(band))return '<div class="empty">小学生はおもりを使わないため、体重別の重さはありません</div>';
-  const jr=band==='12-14',src=fem?LIFTS.map(r=>LIFTF[r[0]]?[r[0],LIFTF[r[0]],...r.slice(2)]:r):LIFTS,lifts=src.filter(r=>r[1]);
-  const near=curW?WTS.reduce((a,b)=>Math.abs(b-curW)<Math.abs(a-curW)?b:a):null;
-  return `<div class="scroll-x"><table class="wtable wt"><thead><tr><th>体重</th>${lifts.map(r=>`<th>${r[0].replace('ルーマニアン','').replace('ブルガリアン','ブルガリアン ')}${r[2]==='db'?'<br><small>（片手）</small>':''}</th>`).join('')}</tr></thead><tbody>${WTS.map(w=>`<tr class="${w===near?'me':''}"><td><b>${w}kg</b>${w===near?'<div class="tip" style="color:var(--accent)">あなた</div>':''}</td>${lifts.map(([,m,kind])=>{const c=(jr?.6:1)*m[lv];return `<td class="kgc">${kind==='db'?r1(w*c):r25(w*c)}<small>kg</small></td>`}).join('')}</tr>`).join('')}</tbody></table></div>
-  <div class="note-s" style="margin-top:8px">回数は${SETS[lv]}。${jr?'中学生向けに軽めにしています。':''}${fem?'女子向けの係数で計算しています。':''}バーベルは2.5kg単位（バーだけで20kgあるため最低20kg）、ダンベルは1kg単位に丸めています。</div>`;
-}
-function wtCard(fem,band,lv,curW,idPrefix){
-  return `<div class="card" style="margin-top:16px"><div class="card-h"><h3>体重別の重さの目安</h3><div class="seg" role="group" aria-label="レベル">${Object.keys(LV).map(k=>`<button type="button" class="${k===lv?'on present':''}" data-a="wtLv" data-k="${k}">${LV[k]}</button>`).join('')}</div></div>${wtTable(fem,band,lv,curW)}</div>`;
-}
-
-function liftTable(pid,lv){
-  const band=sqAge(P(pid).squad);
-  if(KIDS.includes(band))return `<div class="scroll-x"><table class="wtable lifts"><thead><tr><th>種目</th><th>重さ</th><th>回数</th><th>ねらいとポイント</th></tr></thead><tbody>${KIDMENU.map(([nm,rep_,aim])=>`<tr><td><b>${nm}</b>${ILLKEY[nm]?`<button class="illbtn" data-a="howto" data-k="${nm}" aria-label="${nm}のやり方を見る">${illus(ILLKEY[nm])}<span>やり方を見る</span></button>`:''}</td><td class="kg">自重</td><td style="white-space:nowrap">${rep_}</td><td>${aim}</td></tr>`).join('')}</tbody></table></div><div class="note-s" style="margin-top:8px">小学生はおもりを使わず、自分の体重で正しい動きを覚えることを目標にします。遊びの要素を入れて楽しく行いましょう。</div>`;
-  const jr=band==='12-14';
-  const w=curWeight(pid)||60,fem=isF(P(pid)),rows=fem?[ACL,...LIFTS.map(r=>LIFTF[r[0]]?[r[0],LIFTF[r[0]],...r.slice(2)]:r)]:LIFTS;
-  return `<div class="scroll-x"><table class="wtable lifts"><thead><tr><th>種目</th><th>重さの目安</th><th>回数</th><th>ねらいとポイント</th></tr></thead><tbody>${rows.map(([nm,m,kind,aim,tip])=>{
-    const mm=m&&jr?{beg:m.beg*.6,mid:m.mid*.6,adv:m.adv*.6}:m;const kg=!m?'自重':kind==='db'?`${r1(w*mm[lv])}kg<span class="muted" style="font-size:12px;font-family:var(--body);font-weight:500">×2</span>`:`${r25(w*mm[lv])}kg`;
-    return `<tr><td><b>${nm}</b>${ILLKEY[nm]?`<button class="illbtn" data-a="howto" data-k="${nm}" aria-label="${nm}のやり方を見る">${illus(ILLKEY[nm])}<span>やり方を見る</span></button>`:''}</td><td class="kg">${kg}</td><td style="white-space:nowrap">${m?SETS[lv]:BWSETS[nm][lv]}</td><td>${aim}<div class="tip">${tip}</div></td></tr>`}).join('')}</tbody></table></div>`;
-}
-function strengthCard(pid,editable){
-  const p=P(pid),lv=p.trLevel||'beg',w=curWeight(pid);
-  return `<div class="card"><div class="card-h"><h3>筋トレメニュー（体重 ${w??'−'}kg）</h3>${editable?`<div class="seg" role="group" aria-label="レベル">${Object.keys(LV).map(k=>`<button type="button" class="${k===lv?'on present':''}" data-a="trLv" data-k="${k}" data-id="${pid}">${LV[k]}</button>`).join('')}</div>`:`<span class="pill info">${LV[lv]}</span>`}</div>
-    ${liftTable(pid,lv)}
-    <div class="note-s" style="margin-top:10px">重さは体重をもとにした出発点です。最後の2回がきつい程度で、フォームが崩れない重さを優先してください。初めての種目や重さを上げるときは、必ずスタッフの指導のもとで行いましょう。成長期は、重さより正しい動きを覚えることが先です。</div>
-  </div>`;
-}
+/* ---- coach strength menus (no weight prescriptions) ---- */
+const LIFTNAMES=[...LIFTS.map(r=>r[0]),...KIDMENU.map(r=>r[0]),ACL[0]].filter((x,i,a)=>a.indexOf(x)===i);
+const menuOf=sq=>(S.liftMenus=S.liftMenus||{})[sq]||[];
+function illBtn(nm){return ILLKEY[nm]?`<button class="illbtn" data-a="howto" data-k="${esc(nm)}" aria-label="${esc(nm)}のやり方を見る">${illus(ILLKEY[nm])}<span>やり方を見る</span></button>`:''}
+function menuCard(sq,editable){
+  const m=menuOf(sq);
+  return `<div class="card"><div class="card-h"><h3>${esc(sqName(sq))}の筋トレメニュー</h3>${editable?`<button class="btn sm pri" data-a="mnNew" data-k="${sq}">${ic('plus',13)}種目を追加</button>`:''}</div>
+    ${m.length?`<div class="scroll-x"><table class="wtable lifts"><thead><tr><th>種目</th><th>回数・セット</th><th>ポイント</th>${editable?'<th></th>':''}</tr></thead><tbody>${m.map(x=>`<tr><td><b>${esc(x.name)}</b>${illBtn(x.name)}</td><td style="white-space:nowrap">${esc(x.sets||'')}</td><td>${esc(x.note||'')}</td>${editable?`<td><button class="btn sm ghost" data-a="mnEdit" data-k="${sq}" data-id="${x.id}">${ic('edit',13)}</button></td>`:''}</tr>`).join('')}</tbody></table></div>`
+      :`<div class="empty">${editable?'まだメニューがありません。「種目を追加」から、このチームで行う筋トレを登録してください。':'コーチがメニューを登録すると、ここに表示されます。'}</div>`}
+    <div class="note-s" style="margin-top:10px">重さ（kg）はアプリでは決めません。選手の体の成長や経験に合わせて、コーチが一人ひとり見て決めてください。初めての種目は、必ずスタッフの指導のもとで行いましょう。</div></div>`}
+function liftRef(band){const kid=KIDS.includes(band),rows=kid?KIDMENU.map(([nm,rep_,aim])=>[nm,aim,'']):LIFTS.map(r=>[r[0],r[3],r[4]]);
+  return `<div class="card" style="margin-top:16px"><div class="card-h"><h3>基本の種目とフォーム</h3><span class="sub">参考</span></div><div class="lref">${rows.map(([nm,aim,tip])=>`<div class="lr"><div><b>${esc(nm)}</b><div class="note-s" style="margin:2px 0 0">${esc(aim)}${tip?'。'+esc(tip):''}</div></div>${illBtn(nm)}</div>`).join('')}</div>
+    <div class="note-s" style="margin-top:8px">${kid?'小学生は、おもりを使わず自分の体重で正しい動きを覚えることが先です。':'成長期は、重さより正しい動きを覚えることが先です。'}</div></div>`}
+function mnForm(sq,id){const x=id?menuOf(sq).find(y=>y.id===id):{name:'',sets:'',note:''};
+  openDrawer(drHead('',id?'種目を編集':'種目を追加',esc(sqName(sq)))+`<form class="form" id="mnForm" data-k="${sq}" data-id="${id||''}" novalidate>
+    <div class="field"><label for="mnName">種目</label><input type="text" id="mnName" list="mnList" value="${esc(x.name)}" placeholder="例：バックスクワット"><datalist id="mnList">${LIFTNAMES.map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div>
+    <div class="field"><label for="mnSets">回数・セット</label><input type="text" id="mnSets" value="${esc(x.sets)}" placeholder="例：8回 × 3セット"></div>
+    <div class="field"><label for="mnNote">ポイント（重さの決め方など）</label><input type="text" id="mnNote" value="${esc(x.note)}" placeholder="例：重さはコーチと相談して決める"></div>
+    <div class="dr-foot">${id?`<button type="button" class="btn danger" data-a="mnDel" data-k="${sq}" data-id="${id}" style="margin-right:auto">削除</button>`:''}<button type="button" class="btn ghost" data-a="close">キャンセル</button><button type="submit" class="btn pri">保存</button></div></form>`)}
+/* ---- nutrition targets + today's balance (no item counting) ---- */
+function goalTiles(pid){const n=needs(pid);const t1=(k,u,goal,sub)=>`<div class="card tile ntile"><div class="k">${k}</div><div class="v">${goal}<small> ${u}</small></div><div class="s">${sub}</div></div>`;
+  return `<div class="grid ftiles">${t1('たんぱく質','g',n.p,`体重1kgあたり${n.kid?'1.2':'1.6'}g`)}${t1('炭水化物','g',n.c,n.off?'オフの日 体重1kgあたり4g':'練習日 体重1kgあたり6g')}${t1('エネルギー','kcal',n.k,`${DRI[n.band].l}${n.f?'女子':'男子'}・活動量が多い人の目安`)}</div>`}
+function balCard(pid,own){const e=lifeOf(pid)||{},b=e.bal||{},n=BAL.filter(([k])=>b[k]).length;
+  return `<div class="card" style="margin-bottom:16px"><div class="card-h"><h3>今日の食事バランス</h3><span class="sub tnum">${n}/5</span></div>
+    <div class="balrow">${BAL.map(([k,l])=>`<span class="${b[k]?'on':''}">${b[k]?ic('check',12):''}${l}</span>`).join('')}</div>
+    ${own?`<div style="margin-top:10px"><button class="btn sm" data-a="nav" data-v="today">${ic('check',13)}「今日の記録」で入れる</button></div>`:''}
+    <div class="note-s" style="margin-top:8px">主食・主菜・副菜・乳製品・果物の5つがそろうと、練習に必要な栄養がだいたいとれています。</div></div>`}
 V.fuel=()=>isStaff()?fuelStaff():fuelPlayer();
 function fuelPlayer(){
-  const p=me(),n=needs(p.id),list=fuelOf(p.id);
+  const p=me(),n=needs(p.id);
   const tab=ui.fuelTab||'eat',[steps,timing]=eduCards(p.id).split('<!--split-->');
   const tabs=`<div class="ftabs" role="tablist" aria-label="表示の切りかえ">${[['eat','食事','fuel'],['train','筋トレ','condition']].map(([k,l,i])=>`<button role="tab" aria-selected="${tab===k}" class="${tab===k?'on':''}" data-a="fuelTab" data-k="${k}">${ic(k==='eat'?'report':'fuel',17)}${l}</button>`).join('')}</div>`;
-  const hd=head(jp(TODAY)+(n.off?' ・ オフ':' ・ 練習日'),'栄養・筋トレ',tab==='eat'?'今日食べたものを記録すると、目標に対してどれくらいとれているかが分かります。':'体重とレベルに合わせた筋トレメニューです。')+tabs;
-  if(tab==='train')return hd+`<div class="ftab-body">`+strengthCard(p.id,true)+wtCard(isF(p),sqAge(p.squad),ui.wtLv||p.trLevel||'beg',curWeight(p.id))+`<div style="height:16px"></div>`+steps+`</div>`;
-  return hd+`<div class="ftab-body">`+
-  (n.est?`<div class="offnote">体重がまだ記録されていないため、60kgとして計算しています。「睡眠・食事・体重」で体重を記録すると、あなた用の数字になります。</div>`:'')+
-  fuelTiles(p.id)+
-  `<div class="grid g-side" style="margin-bottom:16px">
-    <div class="card"><div class="card-h"><h3>食べたものを追加</h3><span class="sub">＋で1つ追加、−で1つ取り消し</span></div>
-      ${foodTools()}<div class="foodgrid" id="foodGrid">${foodGridHtml(true)}</div>
-      <div class="form" style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px"><div class="lab muted" style="font-size:12.5px">一覧にない食べ物</div>
-        <div class="customfood">
-          <div class="field"><label for="fdN" class="lbl">名前</label><input type="text" id="fdN" placeholder="例：から揚げ定食"></div>
-          <div class="field"><label for="fdP" class="lbl">たんぱく質 g</label><input type="number" id="fdP" min="0" step="0.1"></div>
-          <div class="field"><label for="fdC" class="lbl">炭水化物 g</label><input type="number" id="fdC" min="0" step="0.1"></div>
-          <div class="field"><label for="fdK" class="lbl">kcal</label><input type="number" id="fdK" min="0"></div>
-          <button class="btn" data-a="eatCustom">${ic('plus',14)}追加</button></div></div>
-      <div class="note-s" style="margin-top:8px">数値は日本食品標準成分表（八訂）と、複数の栄養計算サイト・外食チェーンの公表値を平均した目安です。料理は店や家庭の作り方で変わります。プロテインは製品によって異なります。</div>
-    </div>
-    <div class="card" style="align-self:start"><div class="card-h"><h3>今日の記録 <span class="sub tnum" style="font-weight:400">${list.length}点</span></h3>${list.length?`<button class="btn sm danger" data-a="eatClear">${ic('x',13)}すべて取り消す</button>`:''}</div>
-      ${list.length?`<div>${(()=>{const g=[];list.forEach(x=>{const k=x.fid!=null?'f'+x.fid:'c'+x.id;let o=g.find(y=>y.k===k);if(!o){o={k,x,n:0,p:0,kc:0};g.push(o)}o.n++;o.p+=x.p;o.kc+=x.k});return g.map(o=>`<div class="eat"><span>${esc(o.x.name)}</span><span class="nums">P ${Math.round(o.p*10)/10}g ・ ${Math.round(o.kc)}kcal</span>${o.x.fid!=null?stepper(o.x.fid,o.n):`<button class="iconbtn" style="width:28px;height:28px" data-a="uneat" data-id="${o.x.id}" aria-label="${esc(o.x.name)}を消す">${ic('x',13)}</button>`}</div>`).join('')})()}</div>`:'<div class="empty">まだ記録がありません</div>'}
-    </div>
-  </div>`+(()=>{const t=sumF(list);return `<div class="card" style="margin-bottom:16px">${equivHtml(Math.max(0,n.p-t.p),Math.max(0,n.c-t.c),'今日の残りを食べものに置きかえると')}</div>`})()+timing+`</div>`;
+  const hd=head(jp(TODAY)+(n.off?' ・ オフ':' ・ 練習日'),'栄養・筋トレ',tab==='eat'?'1日の目標と、今日の食事のバランスです。':'コーチが決めたメニューと、種目のやり方です。')+tabs;
+  if(tab==='train')return hd+`<div class="ftab-body">`+menuCard(p.squad,false)+liftRef(sqAge(p.squad))+`<div style="height:16px"></div>`+steps+`</div>`;
+  return hd+`<div class="ftab-body">`+(n.est?`<div class="offnote">体重が記録されていないため、年代の平均体重で計算しています。「今日の記録」で体重を入れると、あなた用の数字になります。</div>`:'')+
+    goalTiles(p.id)+balCard(p.id,true)+`<div class="card" style="margin-bottom:16px">${equivHtml(n.p,n.c,'1日の目標を食べものに置きかえると')}</div>`+timing+
+    `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn sm ghost" data-a="nav" data-v="foods">食品の早見表 ${ic('right',13)}</button><button class="btn sm ghost" data-a="nav" data-v="dri">年代別の目安 ${ic('right',13)}</button></div></div>`;
 }
 function fuelStaff(){
-  const ps=sorted().map(p=>{const n=needs(p.id),t=sumF(fuelOf(p.id));return {p,n,t,r:canSee(p,'meals')?t.p/n.p:9}}).sort((a,b)=>a.r-b.r);
-  const rec=ps.filter(x=>canSee(x.p,'meals')&&fuelOf(x.p.id).length).length;
-  return head(jp(TODAY),'栄養・筋トレ','選手ごとの1日の目標と、今日の記録です。たんぱく質がとれていない順に並んでいます。')+
-  `<div class="card" style="margin-bottom:16px"><div class="card-h"><h3>今日の摂取状況</h3><span class="sub tnum">記録 ${rec}/${ps.length}名</span></div>
-    <div class="scroll-x"><table class="wtable" style="min-width:640px"><thead><tr><th>選手</th><th>体重</th><th>たんぱく質（今日 / 目標）</th><th>エネルギー（今日 / 目標）</th><th>筋トレ</th></tr></thead><tbody>
-    ${ps.map(({p,n,t})=>{const vw=canSee(p,'weight'),vm=canSee(p,'meals');return `<tr><td><button class="btn ghost sm" data-a="openFuel" data-id="${p.id}" style="padding:2px 4px">${sqT(p)}${p.num} ${esc(p.name)}</button></td><td class="tnum">${!vw?lockTag():n.est?'<span class="dim">未記録</span>':n.w+'kg'}</td>
-      ${!vm?`<td colspan="2">${lockTag('食事の記録は非公開')}</td>`:`<td><div class="mini"><span class="tnum">${Math.round(t.p)} / ${n.p}g</span><span class="tnum" style="text-align:right">${Math.round(t.p/n.p*100)}%</span><div style="grid-column:1/-1">${ring(t.p,n.p,t.p/n.p<.5?'bad':'')}</div></div></td>
-      <td><div class="mini"><span class="tnum">${Math.round(t.k)} / ${n.k}kcal</span><span class="tnum" style="text-align:right">${Math.round(t.k/n.k*100)}%</span><div style="grid-column:1/-1">${ring(t.k,n.k,'warn')}</div></div></td>`}
-      <td><span class="pill info">${LV[p.trLevel||'beg']}</span></td></tr>`}).join('')}</tbody></table></div></div>
-  ${(()=>{const c=ctxSq();return wtCard(c?sqGender(c)==='f':false,c?sqAge(c):'15-17',ui.wtLv||'beg',null)+(c?'':'<div class="note-s" style="margin:6px 0 0">チームを選ぶと、そのチームの年代・性別に合わせた表になります（今は高校生男子で表示）。</div>')})()}
+  const sqs=ctxSq()?[ctxSq()]:allowedSq(),ps=sorted();
+  const rec=ps.filter(p=>canSee(p,'meals')&&(lifeOf(p.id)||{}).bal).length;
+  return head(jp(TODAY),'栄養・筋トレ','選手ごとの1日の目標と、今日の食事バランス、チームの筋トレメニューです。')+
+  `<div class="card" style="margin-bottom:16px"><div class="card-h"><h3>今日の食事バランス</h3><span class="sub tnum">記録 ${rec}/${ps.length}名</span></div>
+    <div class="scroll-x"><table class="wtable" style="min-width:560px"><thead><tr><th>選手</th><th>体重</th><th>たんぱく質の目標</th><th>エネルギーの目標</th><th>バランス</th></tr></thead><tbody>
+    ${ps.map(p=>{const n=needs(p.id),vw=canSee(p,'weight'),vm=canSee(p,'meals'),b=((lifeOf(p.id)||{}).bal)||{},c=BAL.filter(([k])=>b[k]).length;return `<tr><td>${sqT(p)}${p.num} ${esc(p.name)}</td><td class="tnum">${!vw?lockTag():n.est?'<span class="dim">未記録</span>':n.w+'kg'}</td><td class="tnum">${n.p}g</td><td class="tnum">${n.k}kcal</td><td>${!vm?lockTag():(lifeOf(p.id)||{}).bal?`<span class="pill ${c>=4?'good':c>=2?'warn':'bad'} tnum">${c}/5</span>`:'<span class="dim">未記録</span>'}</td></tr>`}).join('')}</tbody></table></div></div>
+  ${sqs.map(q=>menuCard(q,true)).join('<div style="height:12px"></div>')}
   <div style="height:16px"></div>
   <div class="card"><div class="card-h"><h3>目標の計算方法</h3></div><dl class="kv" style="grid-template-columns:110px minmax(0,1fr)">
     <dt>たんぱく質</dt><dd>体重1kgあたり1.6g（小学生は1.2g）。年代ごとの推奨量を下回らないようにしています</dd>
     <dt>炭水化物</dt><dd>練習日は体重1kgあたり6g、オフの日は4g</dd>
-    <dt>エネルギー</dt><dd>日本人の食事摂取基準（厚生労働省）で、チームの年代・性別の身体活動レベル「高い」の値（例：高校生男子3,150kcal・女子2,550kcal）。強度の高い練習が続く時期は、これより多く必要になることがあります</dd>
-    <dt>練習後の補食</dt><dd>たんぱく質は体重1kgあたり0.3g、炭水化物は1gを、練習後30分以内に</dd>
-    <dt>筋トレの重さ</dt><dd>種目ごとに体重へ係数をかけ、2.5kg単位に丸めています（ダンベルは片手ずつ1kg単位）。女子チームは係数を低めにし、ACL予防の着地練習を加えています。レベルは選手の画面か、選手の詳細から変えられます</dd></dl></div>`;
+    <dt>エネルギー</dt><dd>日本人の食事摂取基準（厚生労働省）で、チームの年代・性別の身体活動レベル「高い」の値。強度の高い練習が続く時期は、これより多く必要になることがあります</dd>
+    <dt>筋トレの重さ</dt><dd>アプリでは計算しません。選手の成長や経験を見て、コーチが一人ひとり決めてください</dd></dl></div>`;
 }
-function updFoods(){const g=$('#foodGrid');if(g)g.innerHTML=foodGridHtml(ui.view==='fuel'&&!isStaff());const r=$('#rankBox');if(r)r.innerHTML=rankChart();const rt=$('#rankTitle');if(rt)rt.textContent=(FSORT[ui.fsort||'p'][1]?FSORT[ui.fsort||'p'][0].replace('順',''):'たんぱく質が多い')+' トップ10'}
-function fuelDrawer(pid){const p=P(pid);if(!p)return;const lv=p.trLevel||'beg';openDrawer(drHead(numB(p,'lg'),esc(p.name),'栄養・筋トレ')+(canSee(p,'meals')?fuelTiles(pid).replace('grid ftiles','grid ftiles one'):`<div class="card" style="margin-bottom:12px"><div class="card-h"><h3>今日の摂取状況</h3>${lockTag()}</div><div class="empty">本人が食事の記録を「自分だけ」に設定しています</div></div>`)+(canSee(p,'weight')?strengthCard(pid,true):`<div class="card"><div class="card-h"><h3>筋トレのレベル</h3><div class="seg" role="group" aria-label="レベル">${Object.keys(LV).map(k=>`<button type="button" class="${k===lv?'on present':''}" data-a="trLv" data-k="${k}" data-id="${pid}">${LV[k]}</button>`).join('')}</div></div><div class="note-s">本人が体重を「自分だけ」に設定しているため、体重から計算する重さは表示されません。</div></div>`))}
+function fuelDrawer(pid){const p=P(pid);if(!p)return;openDrawer(drHead(numB(p,'lg'),esc(p.name),'栄養')+goalTiles(pid).replace('grid ftiles','grid ftiles one')+(canSee(p,'meals')?balCard(pid,false):`<div class="card"><div class="card-h"><h3>今日の食事バランス</h3>${lockTag()}</div><div class="empty">本人が食事の記録を「自分だけ」に設定しています</div></div>`))}
 
 /* ============ age-based nutrition reference (日本人の食事摂取基準) ============ */
 const VIT={'6-7':{m:[0.7,50,5.5,0.9,2.0,130],f:[0.6,50,5.5,0.9,2.0,130]},'8-9':{m:[0.8,60,6.5,1.1,2.5,150],f:[0.7,60,6.5,1.0,2.5,150]},'10-11':{m:[0.9,70,8.0,1.4,3.0,180],f:[0.9,70,8.0,1.3,3.0,180]},'12-14':{m:[1.1,90,9.0,1.6,4.0,230],f:[1.0,90,9.0,1.4,4.0,230]},'15-17':{m:[1.2,100,9.0,1.7,4.0,240],f:[1.0,100,9.0,1.4,4.0,240]},'18-29':{m:[1.1,100,9.0,1.6,4.0,240],f:[0.8,100,9.0,1.2,4.0,240]},'30-49':{m:[1.2,100,9.0,1.7,4.0,240],f:[0.9,100,9.0,1.2,4.0,240]},'50-64':{m:[1.1,100,9.0,1.6,4.0,240],f:[0.8,100,9.0,1.2,4.0,240]}};
@@ -2290,14 +2286,24 @@ function bulkPreview(){
     ${er?'<div class="note-s" style="margin-top:8px">エラーの行は登録されません。元の表を直して、もう一度貼り付けてください。</div>':''}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${ok.length?`<button class="btn pri" data-a="bulkSave">${ic('plus',14)}${ok.length}名を登録する</button>`:''}<button class="btn ghost" data-a="bulkReset">やり直す</button></div></div>`;
 }
+function purgePerson(pid){
+  S.players=S.players.filter(x=>x.id!==pid);S.alumni=(S.alumni||[]).filter(x=>x.id!==pid);
+  ['att','cond','life','fuel'].forEach(k=>{for(const d in (S[k]||{}))if(S[k][d]&&S[k][d][pid]!==undefined)delete S[k][d][pid]});
+  S.injuries=S.injuries.filter(i=>i.pid!==pid);S.reports=S.reports.filter(r=>r.pid!==pid);delete S.careers[pid];
+  for(const e in (S.rsvp||{}))delete S.rsvp[e][pid];delete (S.ruleAck||{})[pid];
+  (S.matches||[]).forEach(m=>{if(m.lu)delete m.lu[pid]});
+  S.messages=S.messages.filter(m=>m.ch!=='dm:'+pid);S.messages.forEach(m=>{if(m.read)delete m.read[pid]});
+  if(S.cycle)delete S.cycle[pid];
+  if(CLOUD&&C.ready){cloudUnjoin(pid);const b=C.db.batch();['s','m','p','d'].forEach(k=>{b.delete(C.db.doc(`clubs/${C.cid}/pd/${pid}_${k}`));delete C.remote['pd/'+pid+'_'+k]});b.commit().catch(e=>console.error(e))}
+}
 function rmMember(id){
-  if(P(id)){S.players=S.players.filter(x=>x.id!==id);S.injuries=S.injuries.filter(i=>i.pid!==id);S.reports=S.reports.filter(r=>r.pid!==id);delete S.careers[id];ui.recentAdd=(ui.recentAdd||[]).filter(x=>x!==id)}
+  if(P(id)){purgePerson(id);ui.recentAdd=(ui.recentAdd||[]).filter(x=>x!==id)}
   else S.staff=S.staff.filter(s=>s.id!==id)}
 function memberRow({k,x}){
   const joined=!!x.joined;
   return `<tr><td><b>${k==='p'?`${x.num} `:''}${esc(x.name)}</b><div class="tip">${k==='p'?x.pos:esc(x.role)}</div></td>
     <td><span class="pin tnum">${x.pin||'—'}</span> <button class="iconbtn" style="width:28px;height:28px;display:inline-grid;vertical-align:middle" data-a="copyPin" data-id="${x.id}" aria-label="${esc(x.name)}の参加番号をコピー">${ic('copy',13)}</button></td>
-    <td>${joined?`<span class="pill good">${ic('attendance',11)}参加済み</span><div class="tip">${jp(iso(new Date(x.joined)))}${x.consent?` ・ 同意済み${x.consent.guardian?'（保護者も）':''}`:''}</div>`:'<span class="pill">まだ</span>'}</td>
+    <td>${joined?`<span class="pill good">${ic('attendance',11)}参加済み</span><div class="tip">${jp(iso(new Date(x.joined)))}${x.consent?` ・ 同意済み${x.consent.guardian?'（保護者も）':''}`:''}</div>`:'<span class="pill">まだ</span>'}${x.gJoined?`<div class="tip">${ic('roster',11)} 保護者も参加中</div>`:''}</td>
     <td style="text-align:right">${joined?`<button class="btn sm ghost" data-a="unjoin" data-id="${x.id}">付け直す</button>`:`<button class="btn sm ghost" data-a="newPin" data-id="${x.id}">番号を変える</button>`}<button class="btn sm danger" data-a="memDel" data-id="${x.id}" style="margin-left:6px">削除</button></td></tr>`;
 }
 V.members=()=>{
@@ -2650,21 +2656,6 @@ function decV(v){
   if(ks.length&&ks.every(k=>isPlain(v[k])&&typeof v[k]._i==='number'))return ks.map(k=>v[k]).sort((a,b)=>a._i-b._i).map(x=>{const y=decV(x);delete y._i;return y});
   const o={};ks.forEach(k=>o[k]=decV(v[k]));return o}
 function stripPins(arr){return (arr||[]).map(x=>{const y=Object.assign({},x);delete y.pin;return y})}
-function toDocs(st){const out={};
-  for(const k in st){if(LOCAL_ONLY.includes(k)||st[k]===undefined)continue;let v=st[k];
-    if(k==='players'||k==='staff')v=stripPins(v);
-    if(SHM[k]&&isPlain(v)){for(const dk in v){const p=SHM[k]==='m'?dk.slice(0,7):dk.slice(0,10),id=k+'@'+p;(out[id]=out[id]||{k,sh:true,d:SHM[k]==='m'?p+'-01':p,raw:{}}).raw[dk]=v[dk]}}
-    else if(SHA[k]&&Array.isArray(v)){const [g,f]=SHA[k];v.forEach(x=>{const ds=f==='ts'?iso(new Date(x.ts||Date.now())):String(x[f]||TODAY);const p=g==='m'?ds.slice(0,7):ds.slice(0,10),id=k+'@'+p;(out[id]=out[id]||{k,sh:true,d:g==='m'?p+'-01':p,arr:[]}).arr.push(x)})}
-    else out[k]={k,sh:false,d:'',val:v}}
-  for(const id in out){const o=out[id];o.v=encV(o.raw||o.arr||o.val);if(o.val===undefined&&!o.raw&&!o.arr)o.v=null;delete o.raw;delete o.arr;delete o.val}
-  return out}
-function fromDocs(rem){const st={};
-  for(const id in rem){const r=rem[id],k=r.k||id.split('@')[0];
-    if(r.sh){const x=decV(r.v);if(SHA[k])st[k]=(st[k]||[]).concat(Array.isArray(x)?x:[]);else st[k]=Object.assign(st[k]||{},isPlain(x)?x:{})}
-    else st[k]=decV(r.v)}
-  for(const k in SHA){if(st[k])st[k].sort((a,b)=>k==='messages'?(a.ts||0)-(b.ts||0):String(a.date).localeCompare(String(b.date)));else st[k]=[]}
-  for(const k in SHM)if(!st[k])st[k]={};
-  return st}
 const SAME={};
 function dd(a,b,depth){
   if(isPlain(a)&&isPlain(b)&&depth<14){const p={};let n=0;
@@ -2678,15 +2669,79 @@ function loadCycle(){try{return JSON.parse(localStorage.getItem(cycKey())||'{}')
 function saveCycle(){try{if(S&&S.cycle)localStorage.setItem(cycKey(),JSON.stringify(S.cycle))}catch(e){}}
 function setSync(s){C.sync=s;const el=document.getElementById('syncSt');if(el){el.className='sync '+s;el.textContent={ok:'クラウドに保存済み',saving:'保存中…',err:'保存できませんでした',off:'オフライン（つながると保存されます）'}[s]||''}}
 function errMsg(e){const c=(e&&e.code)||'';return ({'auth/email-already-in-use':'このメールアドレスはもう登録されています。下の「ログイン」から入ってください。','auth/invalid-email':'メールアドレスの形が正しくありません。','auth/weak-password':'パスワードは6文字以上にしてください。','auth/invalid-credential':'メールアドレスかパスワードが違います。','auth/wrong-password':'メールアドレスかパスワードが違います。','auth/user-not-found':'メールアドレスかパスワードが違います。','auth/too-many-requests':'何度も失敗したので、しばらく待ってからもう一度試してください。','auth/network-request-failed':'通信できませんでした。電波のよい所でもう一度試してください。','permission-denied':'権限がありません。','unavailable':'通信できませんでした。電波のよい所でもう一度試してください。'})[c]||('エラーが起きました（'+(c||'不明')+'）'+(e&&e.message?'：'+String(e.message).slice(0,180):''))}
+/* ---- phase 2: routing per-person data to access-controlled docs ---- */
+const PD_KEYS=['cond','life','fuel','careers','reports'];
+const isStaffCh=ch=>ch==='staff'||/^st:/.test(ch||'');
+function routeField(p,cat,f){const pv=k=>privOf(p,k)==='self'?'p':'s';
+  if(cat==='cond')return f==='note'?pv('condNote'):'s';
+  if(cat==='life'){if(['bed','wake','sq'].includes(f))return pv('sleep');if(['meals','bal','note'].includes(f))return pv('meals');if(f==='wt')return pv('weight');return 's'}
+  if(cat==='fuel')return pv('meals');
+  if(cat==='career')return f==='staff'?'s':pv('career');
+  if(cat==='med'){if(['aFood','aMed','aOther','epi','epiNote'].includes(f))return 's';return privOf(p,'med')==='self'?'p':'m'}
+  return 's'}
+function personParts(st,p){const pid=p.id,o={s:{},m:{},p:{},d:{}},lim=addDays(TODAY,-400);
+  const put=(k,cat,key,f,val)=>{const t=o[k];t[cat]=t[cat]||{};if(key==null)t[cat][f]=val;else (t[cat][key]=t[cat][key]||{})[f]=val};
+  ['cond','life'].forEach(cat=>{const m=st[cat]||{};for(const d in m){if(d<lim)continue;const e=m[d]&&m[d][pid];if(!e)continue;for(const f in e){if(e[f]!==undefined)put(routeField(p,cat,f),cat,d,f,e[f])}}});
+  {const m=st.fuel||{};for(const d in m){if(d<lim)continue;const e=m[d]&&m[d][pid];if(e&&(!Array.isArray(e)||e.length)){const k=routeField(p,'fuel');(o[k].fuel=o[k].fuel||{})[d]=e}}}
+  const c=(st.careers||{})[pid];if(c)for(const f in c)put(routeField(p,'career',f),'career',null,f,c[f]);
+  if(p.med)for(const f in p.med)put(routeField(p,'med',f),'med',null,f,p.med[f]);
+  const reps=(st.reports||[]).filter(r=>r.pid===pid&&String(r.date)>=lim);if(reps.length)o.s.reports=reps;
+  const dms=(st.messages||[]).filter(m=>m.ch==='dm:'+pid&&(m.ts||0)>Date.now()-864e5*180);if(dms.length)o.d.msgs=dms;
+  return o}
+function toDocs(st){const out={};
+  const add=(col,id,meta,v)=>{out[col+'/'+id]=Object.assign({col,id,v:encV(v)},meta)};
+  for(const k in st){if(LOCAL_ONLY.includes(k)||PD_KEYS.includes(k)||st[k]===undefined)continue;let v=st[k];
+    if(k==='players'||k==='alumni')v=v.map(x=>{const y=Object.assign({},x);delete y.pin;delete y.med;delete y.staffNote;return y});
+    if(k==='staff')v=stripPins(v);
+    if(k==='messages')v=v.filter(m=>!/^dm:/.test(m.ch||'')&&!isStaffCh(m.ch));
+    if(SHM[k]&&isPlain(v)){const g={};for(const dk in v){const p=SHM[k]==='m'?dk.slice(0,7):dk.slice(0,10);(g[p]=g[p]||{})[dk]=v[dk]}for(const p in g)add('state',k+'@'+p,{k,sh:true,d:SHM[k]==='m'?p+'-01':p},g[p])}
+    else if(SHA[k]&&Array.isArray(v)){const [gg,f]=SHA[k],g={};v.forEach(x=>{const ds=f==='ts'?iso(new Date(x.ts||Date.now())):String(x[f]||TODAY),p=gg==='m'?ds.slice(0,7):ds.slice(0,10);(g[p]=g[p]||[]).push(x)});for(const p in g)add('state',k+'@'+p,{k,sh:true,d:gg==='m'?p+'-01':p},g[p])}
+    else add('state',k,{k,sh:false,d:''},v)}
+  (st.players||[]).concat(st.alumni||[]).forEach(p=>{const o=personParts(st,p);['s','m','p','d'].forEach(kind=>add('pd',p.id+'_'+kind,{pid:p.id,kind,sq:p.squad||''},o[kind]))});
+  const notes={};(st.players||[]).concat(st.alumni||[]).forEach(p=>{if(p.staffNote)notes[p.id]=p.staffNote});add('so','notes',{},notes);
+  const sm={};(st.messages||[]).filter(m=>isStaffCh(m.ch)).forEach(m=>{const p=iso(new Date(m.ts||Date.now())).slice(0,7);(sm[p]=sm[p]||[]).push(m)});for(const p in sm)add('so','msg@'+p,{},sm[p]);
+  (st.staff||[]).forEach(s=>add('perm',s.id,{},{med:s.squads==='all'||s.medOK===true}));
+  return out}
+function canWrite(path,L){const [col]=path.split('/');const mine=C.mem&&C.mem.personId;
+  if(col==='state')return true;
+  if(col==='pd'){if(L.pid===mine)return true;if(!isStaff())return false;if(L.kind==='p')return false;if(L.kind==='m')return C.canMed;return true}
+  if(col==='so')return isStaff();
+  if(col==='perm')return C.mem&&C.mem.role==='admin';
+  return false}
+const isEmptyV=v=>isPlain(v)&&!Object.keys(v).length;
+function fromDocs(rem){const st={};const pds=[],so=[];
+  for(const path in rem){const r=rem[path],[col,id]=path.split('/');
+    if(col==='pd'){pds.push(r);continue}if(col==='so'){so.push([id,r]);continue}if(col!=='state')continue;
+    const k=r.k||id.split('@')[0];
+    if(r.sh){const x=decV(r.v);if(SHA[k])st[k]=(st[k]||[]).concat(Array.isArray(x)?x:[]);else st[k]=Object.assign(st[k]||{},isPlain(x)?x:{})}
+    else st[k]=decV(r.v)}
+  for(const k in SHM)if(!st[k])st[k]={};
+  st.careers=st.careers||{};st.reports=st.reports||[];st.messages=st.messages||[];
+  if(st.players){const kp=r=>({s:0,m:1,p:2,d:3})[r.kind]||0;pds.sort((a,b)=>kp(a)-kp(b)).forEach(r=>{const v=decV(r.v)||{},pid=r.pid;if(!isPlain(v))return;
+    ['cond','life'].forEach(cat=>{const m=v[cat];if(!isPlain(m))return;for(const d in m){st[cat][d]=st[cat][d]||{};st[cat][d][pid]=Object.assign(st[cat][d][pid]||{},m[d])}});
+    if(isPlain(v.fuel))for(const d in v.fuel)(st.fuel[d]=st.fuel[d]||{})[pid]=v.fuel[d];
+    if(isPlain(v.career))st.careers[pid]=Object.assign(st.careers[pid]||{},v.career);
+    if(isPlain(v.med)){const p=st.players.find(x=>x.id===pid)||(st.alumni||[]).find(x=>x.id===pid);if(p)p.med=Object.assign(p.med||{},v.med)}
+    if(Array.isArray(v.reports))st.reports=st.reports.concat(v.reports);
+    if(Array.isArray(v.msgs))st.messages=st.messages.concat(v.msgs)})}
+  so.forEach(([id,r])=>{const v=decV(r.v);if(id==='notes'&&isPlain(v)&&st.players)st.players.concat(st.alumni||[]).forEach(p=>{if(v[p.id])p.staffNote=v[p.id]});else if(/^msg@/.test(id)&&Array.isArray(v))st.messages=st.messages.concat(v)});
+  const dedupe=a=>{const seen=new Set();return a.filter(x=>x&&x.id&&!seen.has(x.id)&&seen.add(x.id))};
+  st.messages=dedupe(st.messages).sort((a,b)=>(a.ts||0)-(b.ts||0));st.reports=dedupe(st.reports).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  return st}
+const colRef=col=>col==='perm'?C.db.collection('clubs').doc(C.cid).collection('perm'):C.db.collection('clubs').doc(C.cid).collection(col==='so'?'staffonly':col);
 function cloudFlush(){
   clearTimeout(C.timer);C.timer=null;if(!C.ready||!C.cid)return;
   saveCycle();
-  const docs=toDocs(S),col=C.db.collection('clubs').doc(C.cid).collection('state');
-  let batch=C.db.batch(),ops=0;const commits=[];
+  const docs=toDocs(S);let batch=C.db.batch(),ops=0;const commits=[];
   const push=()=>{if(ops){commits.push(batch.commit());batch=C.db.batch();ops=0}};
-  for(const id in docs){const L=docs[id],R=C.remote[id];const patch=R?dd(R.v,L.v,0):L.v;if(patch===SAME)continue;
-    batch.set(col.doc(id),{v:patch,k:L.k,sh:L.sh,d:L.d,at:Date.now(),by:C.uid},{merge:true});ops++;C.remote[id]={k:L.k,sh:L.sh,d:L.d,v:L.v};if(ops>=300)push()}
-  for(const id in C.remote){const R=C.remote[id];if(R.sh&&!docs[id]){batch.delete(col.doc(id));ops++;delete C.remote[id];if(ops>=300)push()}}
+  for(const path in docs){const L=docs[path];if(!canWrite(path,L))continue;const R=C.remote[path];
+    if(!R&&isEmptyV(L.v))continue;
+    const patch=R?dd(R.v,L.v,0):L.v;if(patch===SAME)continue;
+    const meta={};['k','sh','d','pid','kind','sq'].forEach(f=>{if(L[f]!==undefined)meta[f]=L[f]});
+    batch.set(colRef(L.col).doc(L.id),Object.assign({v:patch,at:Date.now(),by:C.uid},meta),{merge:true});ops++;
+    C.remote[path]=Object.assign({},meta,{v:L.v});if(ops>=300)push()}
+  if(isStaff()){for(const path in C.remote){const [col,id]=path.split('/');const R=C.remote[path];
+    if(col==='state'&&((R.sh&&!docs[path])||(!R.sh&&PD_KEYS.includes(R.k||id)))){batch.delete(colRef('state').doc(id));ops++;delete C.remote[path];if(ops>=300)push()}}}
   if(isStaff()){const pins={};[...S.players,...S.staff].forEach(x=>{if(x.pin)pins[x.id]=String(x.pin)});const sig=JSON.stringify(pins);if(sig!==C.pinSig){C.pinSig=sig;C.pins=pins;batch.set(C.db.doc(`clubs/${C.cid}/meta/pins`),{m:pins,at:Date.now()});ops++}}
   push();
   if(!commits.length)return;
@@ -2697,8 +2752,8 @@ function cloudFlush(){
 async function cloudSyncAux(){
   if(!C.ready||!isStaff())return;
   try{
-    const inv={};SQ.forEach(q=>{const code=inviteOf(q);inv[code]={cid:C.cid,sq:q,sqName:sqName(q),club:(C.club&&C.club.name)||'',minor:parseInt(sqAge(q))<18,people:sqMembers(q).map(({k,x})=>({id:x.id,k,name:x.name,num:k==='p'?x.num:null,role:k==='s'?x.role:null,joined:!!x.joined}))}});
-    const keys={};[...S.players,...S.staff].forEach(x=>{if(x.pin&&!x.joined)keys[x.id+'_'+x.pin]=1});
+    const inv={};SQ.forEach(q=>{const code=inviteOf(q);inv[code]={cid:C.cid,sq:q,sqName:sqName(q),club:(C.club&&C.club.name)||'',minor:parseInt(sqAge(q))<18,people:sqMembers(q).map(({k,x})=>({id:x.id,k,name:x.name,num:k==='p'?x.num:null,role:k==='s'?x.role:null,joined:!!x.joined,gjoined:!!x.gJoined}))}});
+    const keys={};[...S.players,...S.staff].forEach(x=>{if(x.pin)keys[x.id+'_'+x.pin]=1});
     const mref=C.db.doc(`clubs/${C.cid}/meta/aux`),ms=await mref.get(),prev=ms.exists?ms.data():{inv:{},keys:{}};prev.inv=prev.inv||{};prev.keys=prev.keys||{};
     let b=C.db.batch(),n=0;const cs=[];const add=f=>{f(b);n++;if(n%300===0){cs.push(b.commit());b=C.db.batch()}};
     for(const c in inv)if(JSON.stringify(inv[c])!==JSON.stringify(prev.inv[c]))add(x=>x.set(C.db.doc('invites/'+c),inv[c]));
@@ -2710,28 +2765,33 @@ async function cloudSyncAux(){
     cs.push(b.commit());await Promise.all(cs);
   }catch(e){console.error('aux',e)}
 }
-async function cloudUnjoin(pid){if(!C.ready)return;try{const qs=await C.db.collection(`clubs/${C.cid}/members`).where('personId','==',pid).get();const b=C.db.batch();qs.forEach(d=>b.delete(d.ref));b.delete(C.db.doc(`clubs/${C.cid}/claims/${pid}`));await b.commit()}catch(e){console.error(e);toast('参加の取り消しをクラウドに反映できませんでした：'+errMsg(e))}}
+async function cloudUnjoin(pid){if(!C.ready)return;try{const qs=await C.db.collection(`clubs/${C.cid}/members`).where('personId','==',pid).get();const b=C.db.batch();qs.forEach(d=>b.delete(d.ref));b.delete(C.db.doc(`clubs/${C.cid}/claims/${pid}`));b.delete(C.db.doc(`clubs/${C.cid}/gclaims/${pid}`));await b.commit()}catch(e){console.error(e);toast('参加の取り消しをクラウドに反映できませんでした：'+errMsg(e))}}
 function stopListen(){(C.unsubs||[]).forEach(f=>{try{f()}catch(e){}});C.unsubs=[]}
-function startListen(){
-  stopListen();C.remote={};C.ready=false;const staffMem=['admin','staff'].includes(C.mem.role);
-  C.got=staffMem?[false,false,false]:[false,false];C.pins={};
+async function startListen(){
+  stopListen();C.remote={};C.ready=false;const staffMem=['admin','staff'].includes(C.mem.role),myPid=C.mem.personId;
   gateShow('loading','データを読み込んでいます…');
-  const col=C.db.collection('clubs').doc(C.cid).collection('state');
+  C.canMed=C.mem.role==='admin';
+  if(staffMem&&!C.canMed){try{const ps=await C.db.doc(`clubs/${C.cid}/perm/${myPid}`).get();C.canMed=ps.exists&&ps.data().med===true}catch(e){C.canMed=false}}
+  const club=C.db.collection('clubs').doc(C.cid),col=club.collection('state'),pd=club.collection('pd');
+  const qs=[['state',col.where('sh','==',false)],['state',col.where('d','>=',cutoff())],['pd',pd.where('pid','==',myPid)]];
+  if(staffMem){qs.push(['pd',pd.where('kind','==','s')],['pd',pd.where('kind','==','d')],['so',club.collection('staffonly')],['perm',club.collection('perm')]);if(C.canMed)qs.push(['pd',pd.where('kind','==','m')])}
+  C.got=qs.map(()=>false).concat(staffMem?[false]:[]);C.pins={};
   const done=i=>{C.got[i]=true;if(C.got.every(Boolean))applyRemote()};
-  const h=i=>snap=>{if(C.timer)cloudFlush();snap.docChanges().forEach(ch=>{const id=ch.doc.id;if(ch.type==='removed')delete C.remote[id];else{const d=ch.doc.data();C.remote[id]={k:d.k,sh:d.sh,d:d.d,v:d.v}}});if(!snap.metadata.hasPendingWrites||!C.ready)done(i)};
+  const h=(i,cname)=>snap=>{if(C.timer)cloudFlush();snap.docChanges().forEach(ch=>{const path=cname+'/'+ch.doc.id;if(ch.type==='removed')delete C.remote[path];else C.remote[path]=Object.assign({},ch.doc.data())});if(!snap.metadata.hasPendingWrites||!C.ready)done(i)};
   const err=e=>{console.error(e);stopListen();C.ready=false;gateGo('login',e.code==='permission-denied'?'このクラブのデータを見る権限がなくなりました。スタッフに確認するか、招待コードからもう一度参加してください。':errMsg(e))};
-  C.unsubs=[col.where('sh','==',false).onSnapshot(h(0),err),col.where('d','>=',cutoff()).onSnapshot(h(1),err)];
-  if(staffMem)C.unsubs.push(C.db.doc(`clubs/${C.cid}/meta/pins`).onSnapshot(s=>{C.pins=(s.exists&&s.data().m)||{};C.pinSig=JSON.stringify(C.pins);done(2)},err));
+  C.unsubs=qs.map(([cname,q],i)=>q.onSnapshot(h(i,cname),err));
+  if(staffMem){const pi=qs.length;C.unsubs.push(C.db.doc(`clubs/${C.cid}/meta/pins`).onSnapshot(s=>{C.pins=(s.exists&&s.data().m)||{};C.pinSig=JSON.stringify(C.pins);done(pi)},err))}
 }
 function applyRemote(){
   const first=!C.ready,cyc=loadCycle();const nS=fromDocs(C.remote);
   if(!nS.players||!nS.staff||!nS.squads||!nS.squads.length){if(first)gateGo('login','クラブのデータが見つかりません。');return}
   nS.cycle=cyc;[...nS.players,...nS.staff].forEach(x=>{if(C.pins[x.id])x.pin=C.pins[x.id]});
+  nS.staff.forEach(x=>{const r=C.remote['perm/'+x.id];if(r&&r.v&&typeof r.v.med==='boolean'&&x.squads!=='all')x.medOK=r.v.med});
   S=nS;SQ=S.squads.map(q=>q.id);
   if(!P(C.mem.personId)&&!SF(C.mem.personId)){stopListen();gateGo('login','あなたの名前がチームの名簿から消されています。スタッフに確認してください。');return}
   ui.role=C.mem.personId;
   if(first){C.ready=true;gateHide();ui.view='home';migrate();
-    const me_=P(ui.role)||SF(ui.role);if(me_&&!me_.joined){me_.joined=Date.now();if(C.consent)me_.consent=C.consent;save()}C.consent=null;
+    const me_=P(ui.role)||SF(ui.role);if(me_&&C.mem.role==='guardian'){if(!me_.gJoined){me_.gJoined=Date.now();me_.consent=Object.assign({},me_.consent||{},{ts:Date.now(),guardian:true});save()}}else if(me_&&!me_.joined){me_.joined=Date.now();if(C.consent)me_.consent=C.consent;save()}C.consent=null;
     render(true);setSync('ok');if(isStaff())setTimeout(cloudSyncAux,1500)}
   else{const a=document.activeElement,typing=a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName);if(typing)renderShell();else render(false)}
 }
@@ -2741,8 +2801,8 @@ function gateShow(step,msg){G.step=step;G.msg=msg||'';gateRender()}
 function gateGo(step,err){G.step=step;G.err=err||'';G.busy=false;gateRender()}
 function gateHide(){const g=$('#gate');if(g)g.hidden=true;document.body.classList.remove('gated')}
 function gListHtml(){const q=(G.q||'').replace(/\s/g,'');const ps=(G.inv.people||[]).filter(x=>!q||(x.name||'').replace(/\s/g,'').includes(q)||String(x.num)===q);
-  return ps.map(x=>`<button class="jname" data-a="gPick" data-id="${esc(x.id)}" ${x.joined?'disabled':''}><span class="tnum">${x.k==='p'?esc(x.num??''):''}</span><b>${esc(x.name)}</b><span class="muted">${x.k==='s'?esc(x.role||'スタッフ'):''}${x.joined?' 参加済み':''}</span></button>`).join('')||'<div class="empty">見つかりません</div>'}
-function acctHtml(){const m=P(ui.role)||SF(ui.role);return `<div class="acct"><b>${esc((C.club&&C.club.name)||'')}</b><span>${esc(m?m.name:'')}${m&&SF(m.id)?' ・ '+esc(m.role):''}</span><span id="syncSt" class="sync ${C.sync}">${{ok:'クラウドに保存済み',saving:'保存中…',err:'保存できませんでした',off:'オフライン（つながると保存されます）'}[C.sync]||''}</span><button class="btn sm ghost" data-a="logout">ログアウト</button></div>`}
+  return ps.map(x=>`<button class="jname" data-a="gPick" data-id="${esc(x.id)}" ${x.joined&&(x.k!=='p'||x.gjoined)?'disabled':''}><span class="tnum">${x.k==='p'?esc(x.num??''):''}</span><b>${esc(x.name)}</b><span class="muted">${x.k==='s'?esc(x.role||'スタッフ'):''}${x.joined?' 参加済み':''}${x.gjoined?' ・ 保護者も参加済み':''}</span></button>`).join('')||'<div class="empty">見つかりません</div>'}
+function acctHtml(){const m=P(ui.role)||SF(ui.role);return `<div class="acct"><b>${esc((C.club&&C.club.name)||'')}</b><span>${C.mem&&C.mem.role==='guardian'?'保護者（'+esc(m?m.name:'')+'）':esc(m?m.name:'')}${m&&SF(m.id)?' ・ '+esc(m.role):''}</span><span id="syncSt" class="sync ${C.sync}">${{ok:'クラウドに保存済み',saving:'保存中…',err:'保存できませんでした',off:'オフライン（つながると保存されます）'}[C.sync]||''}</span><button class="btn sm ghost" data-a="logout">ログアウト</button></div>`}
 function gateRender(){
   let g=$('#gate');if(!g){g=document.createElement('div');g.id='gate';document.body.appendChild(g)}
   g.hidden=false;document.body.classList.add('gated');
@@ -2758,12 +2818,14 @@ function gateRender(){
   else if(G.step==='join1')b=`<button class="glink back" data-a="gTo" data-k="${C.uid?'acct':'login'}">← 戻る</button><h1>招待コードで参加</h1>${msg}<form class="form" id="gJoin1" novalidate><div class="field"><label for="gCode">招待コード（6文字）</label><input type="text" id="gCode" class="bigin" maxlength="6" autocapitalize="characters" autocomplete="off" value="${esc(G.code)}" placeholder="例 K7Q2XM"></div>${err}<button class="btn pri wide" type="submit" ${busy}>次へ</button></form><div class="note-s">招待コードは、監督・マネージャーから届いたリンクやQRコードに入っています。</div>`;
   else if(G.step==='join2'){
     b=`<button class="glink back" data-a="gTo" data-k="join1">← 戻る</button><h1>${esc(G.inv.club||'')} ${esc(G.inv.sqName||'')}</h1><div class="gmsg">自分の名前を選んでください。</div><input type="search" id="gQ" placeholder="名前や背番号でさがす" value="${esc(G.q)}" style="margin-bottom:10px"><div class="jlist" id="gList">${gListHtml()}</div><div class="note-s" style="margin-top:10px">名前がないときは、監督・マネージャーに名簿への追加をお願いしてください。</div>`}
-  else if(G.step==='join3'){const x=G.pick,minor=x.k==='p'&&G.inv.minor;
-    b=`<button class="glink back" data-a="gTo" data-k="join2">← 戻る</button><h1>${esc(x.name)}さんとして参加</h1><form class="form" id="gJoin3" novalidate>
+  else if(G.step==='join3'){const x=G.pick,canG=x.k==='p'&&!x.gjoined,canSelf=!x.joined;if(!G.as)G.as=canSelf?'self':'guardian';if(G.as==='self'&&!canSelf)G.as='guardian';if(G.as==='guardian'&&!canG)G.as='self';const gd=G.as==='guardian',minor=x.k==='p'&&G.inv.minor&&!gd;
+    b=`<button class="glink back" data-a="gTo" data-k="join2">← 戻る</button><h1>${gd?`${esc(x.name)}さんの保護者として参加`:`${esc(x.name)}さんとして参加`}</h1>
+    ${x.k==='p'?`<div class="seg" style="margin-bottom:4px"><button type="button" class="${!gd?'on':''}" data-a="gAs" data-k="self" ${canSelf?'':'disabled'}>本人</button><button type="button" class="${gd?'on':''}" data-a="gAs" data-k="guardian" ${canG?'':'disabled'}>保護者</button></div><div class="note-s">${gd?'保護者として参加すると、お子さんの出欠や体調の入力、チームからの連絡の確認ができます。参加番号はお子さんと同じです。':'本人が参加します。保護者の方は「保護者」を選んでください。'}</div>`:''}
+    <form class="form" id="gJoin3" novalidate>
       <div class="field"><label for="gPin">参加番号（4けた）</label><input type="text" id="gPin" class="bigin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000"><div class="note-s" style="margin-top:4px">スタッフから1人ずつ伝えられる番号です。</div></div>
       ${C.uid?`<div class="gmsg">ログイン中：${esc(C.email||'')}</div>`:`<div class="field"><label for="gEmail">メールアドレス（ログインに使います）</label><input type="email" id="gEmail" autocomplete="email" inputmode="email"></div><div class="field"><label for="gPass">パスワード（6文字以上）</label><input type="password" id="gPass" autocomplete="new-password"></div>`}
       <div class="agree"><b>このアプリに記録する情報と、見られる人</b><ul><li>名前・背番号・連絡先・緊急連絡先：チームのスタッフ</li><li>出欠・体調・けが：チームのスタッフ（練習の安全のため）</li><li>睡眠・食事・体重・進路・医療の情報：スタッフと共有するか自分だけにするかを「プライバシー設定」で選べます</li><li>女子選手の月経の記録：本人のスマホの中だけに保存され、クラウドには送られません</li></ul><div>記録した情報は、チームの活動と、あなたの体調・安全の管理だけに使います。チームを離れるときは、監督・マネージャーに伝えると削除できます。</div></div>
-      <label class="toggle accent"><input type="checkbox" id="gAg1" ${G.ag1?'checked':''}><span class="sw"></span>内容を読んで同意します</label>
+      <label class="toggle accent"><input type="checkbox" id="gAg1" ${G.ag1?'checked':''}><span class="sw"></span>${gd?'保護者として、内容を読んで同意します':'内容を読んで同意します'}</label>
       ${minor?`<label class="toggle accent"><input type="checkbox" id="gAg2" ${G.ag2?'checked':''}><span class="sw"></span>保護者（親）にこの内容を伝えて、同意をもらいました</label>`:''}
       ${err}<button class="btn pri wide" type="submit" ${busy}>${G.busy?'参加しています…':'同意して参加する'}</button></form>`}
   else if(G.step==='create')b=`<button class="glink back" data-a="gTo" data-k="${C.uid?'acct':'login'}">← 戻る</button><h1>新しくクラブを作る</h1><div class="gmsg">あなたがクラブの代表（すべてのチームを管理できる人）になります。</div><form class="form" id="gCreate" novalidate>
@@ -2802,12 +2864,12 @@ async function gateSubmit(id){
     if(!$('#gAg1').checked||(g2&&!g2.checked)){gateGo('join3',g2?'2つとも確認してから進んでください':'同意のチェックを入れてください');return}
     G.busy=true;C.busy=true;const em=($('#gEmail')||{}).value,pw=($('#gPass')||{}).value;gateRender();if($('#gEmail'))$('#gEmail').value=em||'';if($('#gPass'))$('#gPass').value=pw||'';
     try{if(!await ensureAccount()){C.busy=false;gateGo('join3',G.err);return}}catch(e){C.busy=false;gateGo('join3',errMsg(e));return}
-    const x=G.pick,cid=G.inv.cid,b=C.db.batch();
-    b.set(C.db.doc(`clubs/${cid}/members/${C.uid}`),{personId:x.id,pin,role:x.k==='p'?'player':'staff',name:x.name,at:Date.now()});
-    b.set(C.db.doc(`clubs/${cid}/claims/${x.id}`),{uid:C.uid,at:Date.now()});
+    const x=G.pick,cid=G.inv.cid,b=C.db.batch(),gd=G.as==='guardian';
+    b.set(C.db.doc(`clubs/${cid}/members/${C.uid}`),{personId:x.id,pin,role:gd?'guardian':x.k==='p'?'player':'staff',name:x.name,at:Date.now()});
+    b.set(C.db.doc(`clubs/${cid}/${gd?'gclaims':'claims'}/${x.id}`),{uid:C.uid,at:Date.now()});
     b.set(C.db.doc('users/'+C.uid),{cid,at:Date.now()});
-    try{await b.commit();C.consent={ts:Date.now(),guardian:g2?true:null};C.busy=false;G.code='';try{history.replaceState(null,'',location.pathname)}catch(e){}await enterFromUser()}
-    catch(e){C.busy=false;gateGo('join3',e.code==='permission-denied'?'参加番号が違うか、この名前はすでに別の人が参加しています。番号を確かめて、もう一度入れてください':errMsg(e))}
+    try{await b.commit();C.consent={ts:Date.now(),guardian:gd||g2?true:null};C.busy=false;G.code='';try{history.replaceState(null,'',location.pathname)}catch(e){}await enterFromUser()}
+    catch(e){C.busy=false;gateGo('join3',e.code==='permission-denied'?(gd?'参加番号が違うか、この選手の保護者はすでに参加しています。':'参加番号が違うか、この名前はすでに別の人が参加しています。')+'番号を確かめて、もう一度入れてください':errMsg(e))}
     return}
   if(id==='gCreate'){const club=$('#gClub').value.trim(),name=$('#gName').value.trim(),role=$('#gRole').value,sample=$('#gSample').checked;
     if(!club||!name){gateGo('create','クラブの名前とあなたの名前を入れてください');return}
@@ -2825,7 +2887,8 @@ async function gateSubmit(id){
       b.set(C.db.doc('users/'+C.uid),{cid,at:Date.now()});
       await b.commit();
       const docs=toDocs(S);let bb=C.db.batch(),n=0;const cs=[];
-      for(const id in docs){const L=docs[id];bb.set(C.db.doc(`clubs/${cid}/state/${id}`),{v:L.v,k:L.k,sh:L.sh,d:L.d,at:Date.now(),by:C.uid});n++;if(n%200===0){cs.push(bb.commit());bb=C.db.batch()}}
+      for(const path in docs){const L=docs[path];if(isEmptyV(L.v)&&L.col!=='perm')continue;if(L.col==='pd'&&L.kind==='p'&&L.pid!==a.id)continue;const meta={};['k','sh','d','pid','kind','sq'].forEach(f=>{if(L[f]!==undefined)meta[f]=L[f]});
+        const cn=L.col==='so'?'staffonly':L.col;bb.set(C.db.doc(`clubs/${cid}/${cn}/${L.id}`),Object.assign({v:L.v,at:Date.now(),by:C.uid},meta));n++;if(n%200===0){cs.push(bb.commit());bb=C.db.batch()}}
       const pins={};[...S.players,...S.staff].forEach(x=>{if(x.pin)pins[x.id]=String(x.pin)});bb.set(C.db.doc(`clubs/${cid}/meta/pins`),{m:pins,at:Date.now()});
       cs.push(bb.commit());await Promise.all(cs);
       C.busy=false;await enterFromUser();toast('クラブを作りました');
@@ -2845,6 +2908,54 @@ function cloudInit(){
     if(!u){stopListen();C.uid=null;C.email=null;C.ready=false;C.cid=null;gateGo(G.code?'join1':'login',G.err);return}
     C.uid=u.uid;C.email=u.email;if(C.busy||['join3','create'].includes(G.step))return;enterFromUser()});
 }
+/* ============ app install (PWA), notifications inbox, push ============ */
+const FB_VAPID=''; // Firebaseコンソール →（歯車）プロジェクトの設定 → Cloud Messaging → ウェブプッシュ証明書 の「鍵ペア」を入れると通知が有効になります
+let deferredInstall=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;if(ui.view==='more')render(false)});
+const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
+const isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent);
+function pwaInit(){if(!CLOUD||!('serviceWorker' in navigator))return;navigator.serviceWorker.register('sw.js').then(r=>{C.swReg=r}).catch(e=>console.warn('sw',e));
+  try{if(FB_VAPID&&firebase.messaging&&firebase.messaging.isSupported&&firebase.messaging.isSupported())firebase.messaging().onMessage(p=>{const n=p.notification||{};toast((n.title?n.title+'：':'')+(n.body||''))})}catch(e){}}
+const pushOK=()=>{try{return localStorage.getItem(KEY+'-push-'+(C.uid||''))==='1'&&typeof Notification!=='undefined'&&Notification.permission==='granted'}catch(e){return false}};
+function appCard(){if(!CLOUD)return '';
+  const sa=isStandalone(),ios=isIOS();
+  const inst=sa?`<div class="rok" style="margin:0">${ic('check',15)}<span>ホーム画面のアプリから開いています</span></div>`
+    :deferredInstall?`<button class="btn pri" data-a="pwaInstall">${ic('plus',14)}ホーム画面に追加する</button>`
+    :ios?`<div class="note-s" style="margin:0">Safariの下の <b>共有ボタン（□に↑）</b> →「<b>ホーム画面に追加</b>」を押すと、アプリのように開けます。</div>`
+    :`<div class="note-s" style="margin:0">ブラウザのメニュー（︙）→「<b>ホーム画面に追加</b>」または「<b>アプリをインストール</b>」を押すと、アプリのように開けます。</div>`;
+  const pushSup=typeof Notification!=='undefined'&&'serviceWorker' in navigator;
+  const notif=!FB_VAPID?`<div class="note-s" style="margin:0">スマホへの通知は準備中です。${isAdmin()?'クラブ代表の設定が終わると使えるようになります。':''}</div>`
+    :ios&&!sa?`<div class="note-s" style="margin:0">iPhoneは、先にホーム画面に追加して、そこから開くと通知をオンにできます。</div>`
+    :!pushSup?`<div class="note-s" style="margin:0">このブラウザは通知に対応していません。</div>`
+    :pushOK()?`<div class="rok" style="margin:0">${ic('check',15)}<span>通知はオンです</span></div>`
+    :typeof Notification!=='undefined'&&Notification.permission==='denied'?`<div class="note-s" style="margin:0">通知がブロックされています。スマホの設定で、このアプリ（またはブラウザ）の通知を許可してください。</div>`
+    :`<button class="btn" data-a="pushOn">${ic('chat',14)}通知を受け取る</button>`;
+  return `<div class="card appcard" style="margin-bottom:6px"><div class="card-h"><h3>アプリとして使う</h3></div><div class="stack" style="gap:12px"><div>${inst}</div><div><div class="lbl" style="margin-bottom:6px">予定・重要連絡の通知</div>${notif}</div></div></div>`}
+async function pushOn(){
+  try{const perm=await Notification.requestPermission();if(perm!=='granted'){toast('通知が許可されませんでした');render(false);return}
+    const reg=C.swReg||await navigator.serviceWorker.ready;const token=await firebase.messaging().getToken({vapidKey:FB_VAPID,serviceWorkerRegistration:reg});
+    if(!token){toast('通知の準備ができませんでした');return}
+    const m=P(ui.role)||SF(ui.role);await C.db.doc(`clubs/${C.cid}/tokens/${C.uid}`).set({token,pid:ui.role,role:C.mem.role,sq:m&&m.squad?m.squad:(m&&m.squads==='all'?'all':(m&&m.squads||[]).join(',')),at:Date.now()});
+    localStorage.setItem(KEY+'-push-'+C.uid,'1');toast('通知をオンにしました');render(false)}
+  catch(e){console.error(e);toast('通知をオンにできませんでした：'+errMsg(e))}}
+/* ---- inbox ---- */
+function inboxItems(){const it=[],st=isStaff(),p=me();
+  if(!st&&p){
+    if(!condOf(p.id))it.push(['check','今日の記録がまだです','体調・睡眠・食事を30秒で','today']);
+    const ev=evNeed(p);if(ev.length)it.push(['calendar',`出欠の回答がまだの予定が${ev.length}件`,ev.slice(0,2).map(e=>jp(e.date)+' '+e.title).join(' / '),'schedule']);
+    if(ruleNeed(p).length)it.push(['rule','部のルールが変更されました','読んで「確認しました」を押してください','rules']);
+    const un=S.messages.filter(m=>m.imp&&m.from!==p.id&&(m.ch==='team'||m.ch==='sq:'+p.squad)&&!(m.read&&m.read[p.id]));if(un.length)it.push(['chat',`未読の重要連絡が${un.length}件`,un[un.length-1].text.split('\n')[0].slice(0,40),'chat']);
+    const n=lateCount(p.id),L=S.settings.lateLimit;if(n>=L-1&&n>0)it.push(['alert',n>=L?'遅刻が面談の回数に達しています':'あと1回で面談です',`今月の遅刻 ${n}回`,'attendance']);
+  }else if(st){
+    const pen=penalty().length;if(pen)it.push(['alert',`面談対象の選手が${pen}名`,'今月の遅刻回数が面談ラインに達しています','home']);
+    const sqs=ctxSq()?[ctxSq()]:allowedSq(),yet=sqs.flatMap(sqMembers).filter(({x})=>!x.joined).length;if(yet)it.push(['roster',`まだアプリに参加していない人が${yet}名`,'招待リンクと参加番号を伝えてください','members']);
+    const evs=S.events.filter(e=>e.ask&&diff(TODAY,e.date)>=0&&diff(TODAY,e.date)<=7&&(e.sq==='club'?isAdmin():sqs.includes(e.sq)));const none=evs.reduce((a,e)=>a+evCounts(e).none,0);if(none)it.push(['calendar',`1週間以内の予定に未回答が${none}件`,evs.slice(0,2).map(e=>jp(e.date)+' '+e.title).join(' / '),'schedule']);
+    const bad=sorted().filter(p=>{const c=condOf(p.id);return c&&(c.sick||c.v<=2)}).length;if(bad)it.push(['condition',`体調不良・不調の選手が${bad}名`,'今日のコンディション','condition']);
+    const cc=S.injuries.filter(i=>i.status==='active'&&i.cc&&P(i.pid)&&sqs.includes(P(i.pid).squad)).length;if(cc)it.push(['brain',`脳しんとうの復帰ステップ中の選手が${cc}名`,'段階を確かめてください','condition']);
+  }
+  return it}
+function bellHtml(){const n=inboxItems().length;return `${ic('bell',19)}${n?`<span class="bdot">${n}</span>`:''}`}
+function inboxDrawer(){const it=inboxItems();openDrawer(drHead('','お知らせ',jp(TODAY))+(it.length?`<div class="stack" style="gap:8px">${it.map(([i,t,s,v])=>`<button class="card mbtn hov" data-a="inboxGo" data-v="${v}"><span class="mi">${ic(i,18)}</span><span class="grow"><b>${esc(t)}</b>${s?`<span>${esc(s)}</span>`:''}</span>${ic('right',15)}</button>`).join('')}</div>`:'<div class="empty">今は確認が必要なことはありません</div>'))}
 const PARENT={dri:'fuel',foods:'fuel'};
 function navItems(){
   const st=isStaff(),p=me();
@@ -2878,14 +2989,15 @@ function renderShell(){
   const prim=items.filter(x=>x.t),rest=items.filter(x=>!x.t),moreOn=!prim.some(x=>x.v===c2);
   $('#tabbar').innerHTML=prim.map(x=>`<button class="${x.v===c2?'on':''}" data-a="nav" data-v="${x.v}" aria-label="${x.l}">${ic(x.i,21)}${x.s}${x.c?'<span class="dot"></span>':''}</button>`).join('')+`<button class="${moreOn?'on':''}" data-a="nav" data-v="more" aria-label="その他のメニュー">${ic('grid',21)}その他${rest.some(x=>x.c)?'<span class="dot"></span>':''}</button>`;
   const ac=$('#acct');if(ac)ac.innerHTML=CLOUD&&C.ready?acctHtml():'';
+  const bt=$('#bellTop');if(bt)bt.innerHTML=bellHtml();const bs=$('#bellSide');if(bs)bs.innerHTML=bellHtml()+'<span>お知らせ</span>';
   const opts=`<optgroup label="スタッフ">${S.staff.map(s=>`<option value="${s.id}">${s.role}　${esc(s.name)}（${s.squads==='all'?'全チーム':s.squads.join('・')}）</option>`).join('')}</optgroup>${SQ.map(k=>`<optgroup label="選手（${sqName(k)}）">${S.players.filter(p=>p.squad===k).sort((a,b)=>a.num-b.num).map(p=>`<option value="${p.id}">${p.num} ${esc(p.name)}</option>`).join('')}</optgroup>`).join('')}`;
   document.querySelectorAll('[data-role]').forEach(s=>{s.innerHTML=opts;s.value=ui.role});
 }
 V.more=()=>{const items=navItems().filter(x=>!x.t);let g='',out='';
   items.forEach(x=>{if(x.g!==g){if(g)out+='</div>';out+=`<div class="msec">${x.g}</div><div class="mgrid">`;g=x.g}
     out+=`<button class="card mbtn hov" data-a="nav" data-v="${x.v}"><span class="mi">${ic(x.i,20)}</span><span class="grow"><b>${x.l}</b>${x.d?`<span>${x.d}</span>`:''}</span>${x.c?'<span class="dotb"></span>':''}${ic('right',15)}</button>`});
-  return head('メニュー','その他','毎日は使わない機能をここにまとめています。')+(CLOUD&&C.ready?`<div class="card" style="margin-bottom:6px">${acctHtml()}</div>`:'')+out+(g?'</div>':'')};
-function nutTabs(){const v=ui.view;return `<div class="ftabs three" role="tablist" style="margin-bottom:18px">${[['fuel','あなたの栄養・筋トレ','fuel'],['dri','年代別の目安','chart'],['foods','食品の早見表','report']].map(([k,l,i])=>`<button role="tab" aria-selected="${v===k}" class="${v===k?'on':''}" data-a="nav" data-v="${k}">${ic(i,16)}${l}</button>`).join('')}</div>`}
+  return head('メニュー','その他','毎日は使わない機能をここにまとめています。')+(CLOUD&&C.ready?`<div class="card" style="margin-bottom:12px">${acctHtml()}</div>`+appCard():'')+out+(g?'</div>':'')};
+function nutTabs(){const v=ui.view;return `<div class="ftabs three" role="tablist" style="margin-bottom:18px">${[['fuel','栄養・筋トレ','fuel'],['dri','年代別の目安','chart'],['foods','食品の早見表','report']].map(([k,l,i])=>`<button role="tab" aria-selected="${v===k}" class="${v===k?'on':''}" data-a="nav" data-v="${k}">${ic(i,16)}${l}</button>`).join('')}</div>`}
 {const f=V.fuel,d=V.dri,fo=V.foods;V.fuel=()=>nutTabs()+f();V.dri=()=>nutTabs()+d();V.foods=()=>nutTabs()+fo();}
 function squadBar(){
   if(!isStaff())return '';
@@ -2897,7 +3009,7 @@ function render(anim){
   renderShell();
   const v=$('#view'),main=$('#main'),keep=anim?0:main.scrollTop;
   const fg=$('#foodGrid'),fgs=fg?fg.scrollTop:0;
-  v.innerHTML=squadBar()+V[ui.view]();
+  v.innerHTML=(CLOUD&&C.ready&&C.mem&&C.mem.role==='guardian'?`<div class="gbanner">${ic('roster',14)}保護者として、${esc((P(ui.role)||{}).name||'')}さんの画面を表示しています</div>`:'')+squadBar()+V[ui.view]();
   if(!anim){const g2=$('#foodGrid');if(g2)g2.scrollTop=fgs}
   if(anim){v.classList.remove('enter');void v.offsetWidth;v.classList.add('enter');main.scrollTop=0}else main.scrollTop=keep;
   if(ui.view==='roster')filterRoster();
@@ -2942,7 +3054,7 @@ function playerForm(id){
     <div class="field"><label for="fNote">その他の連絡事項</label><textarea id="fNote" placeholder="持病・アレルギー・送迎の事情など、スタッフが知っておくべきこと">${esc(p.note)}</textarea></div>
     ${medOn()?`<div class="dr-sec" style="padding-bottom:0"><h4>アレルギー・医療の情報</h4></div>${medFields(p.med)}`:''}
     <div class="dim" id="fErr" style="color:var(--bad)" hidden></div>
-    <div class="dr-foot">${id?`<button type="button" class="btn danger" data-a="delPlayer" data-id="${id}" style="margin-right:auto">削除</button>`:''}<button type="button" class="btn ghost" data-a="close">キャンセル</button><button type="submit" class="btn pri">保存</button></div>
+    <div class="dr-foot">${id?`<button type="button" class="btn danger" data-a="delPlayer" data-id="${id}">完全に削除</button><button type="button" class="btn" data-a="archP" data-id="${id}" style="margin-right:auto">卒業・退部にする</button>`:''}<button type="button" class="btn ghost" data-a="close">キャンセル</button><button type="submit" class="btn pri">保存</button></div>
   </form>`);
 }
 function injuryForm(id){
@@ -2971,7 +3083,13 @@ const A={
   newPlayer:()=>playerForm(null),
   editPlayer:e=>playerForm(e.dataset.id),
   delPlayer:e=>{if(!e.classList.contains('arm')){e.classList.add('arm');e.textContent='もう一度押すと削除します';setTimeout(()=>{if(e.isConnected){e.classList.remove('arm');e.textContent='削除'}},3000);return}
-    const id=e.dataset.id,p=P(id);S.players=S.players.filter(x=>x.id!==id);S.injuries=S.injuries.filter(i=>i.pid!==id);S.reports=S.reports.filter(r=>r.pid!==id);delete S.careers[id];save();closeDrawer();render(false);toast(`${p?p.name:'選手'}を削除しました`)},
+    const id=e.dataset.id,p=P(id)||(S.alumni||[]).find(x=>x.id===id);purgePerson(id);save();closeDrawer();render(false);toast(`${p?p.name:'選手'}のデータをすべて削除しました`)},
+  archP:e=>{const p=P(e.dataset.id);if(!p)return;if(!e.classList.contains('arm')){e.classList.add('arm');e.textContent='もう一度押すと名簿から外します';return}
+    S.players=S.players.filter(x=>x.id!==p.id);(S.alumni=S.alumni||[]).push(Object.assign(p,{leftAt:TODAY,joined:null,gJoined:null}));save();if(CLOUD)cloudUnjoin(p.id);closeDrawer();render(false);toast(`${p.name}を卒業・退部にしました。アプリには入れなくなります`)},
+  alumRestore:e=>{const a=(S.alumni||[]).find(x=>x.id===e.dataset.id);if(!a)return;S.alumni=S.alumni.filter(x=>x!==a);delete a.leftAt;a.pin=newPin();if(!SQ.includes(a.squad))a.squad=SQ[0];S.players.push(a);save();render(false);toast(`${a.name}を名簿に戻しました。新しい参加番号：${a.pin}`)},
+  alumDel:e=>{if(!e.classList.contains('arm')){e.classList.add('arm');e.textContent='もう一度押すと完全に削除';setTimeout(()=>{if(e.isConnected){e.classList.remove('arm');e.textContent='完全に削除'}},3000);return}
+    const a=(S.alumni||[]).find(x=>x.id===e.dataset.id);purgePerson(e.dataset.id);save();render(false);toast(`${a?a.name:''}のデータをすべて削除しました`)},
+  alumView:()=>{ui.alum=!ui.alum;render(false)},
   algF:e=>{ui.alg=!ui.alg;e.classList.toggle('on',ui.alg);e.style.cssText=ui.alg?'':'color:var(--bad);border-color:rgba(255,106,92,.45)';filterRoster()},
   squad:e=>{ui.squad=e.dataset.k;ui.repFilter='all';ui.mkSel=null;ui.arSel=null;ui.plan=0;ui.match=null;render(false);toast(ui.squad==='all'?'全体を表示しています':`${sqName(ui.squad)}を表示しています`)},
   pos:e=>{ui.pos=e.dataset.pos;document.querySelectorAll('#posChips .chip').forEach(c=>c.classList.toggle('on',c.dataset.pos===ui.pos));filterRoster()},
@@ -3056,10 +3174,17 @@ const A={
     if(CLOUD){const keep=ui.role;o.cycle=S.cycle;S=o;SQ=S.squads.map(q=>q.id);if(!P(keep)&&!SF(keep)){toast('バックアップにあなたの名前がないため戻せません');return}migrate();cloudFlush();render(true);toast('バックアップから戻しました');return}
     S=o;save();ui.role=(S.staff.find(x=>x.squads==='all')||S.staff[0]).id;ui.view='home';location.reload()},
   gTo:e=>{G.err='';if(e.dataset.k!=='acct')G.msg='';gateGo(e.dataset.k)},
-  gPick:e=>{G.pick=(G.inv.people||[]).find(x=>x.id===e.dataset.id);if(G.pick){G.err='';gateGo('join3')}},
+  gPick:e=>{G.pick=(G.inv.people||[]).find(x=>x.id===e.dataset.id);G.as=null;if(G.pick){G.err='';gateGo('join3')}},
   gReset:async()=>{const em=(($('#gEmail')||{}).value||'').trim();if(!em){gateGo('login','パスワードを再設定するメールアドレスを上の欄に入れてから、もう一度押してください');return}try{await C.auth.sendPasswordResetEmail(em);G.msg=`${em} にパスワード再設定のメールを送りました`;gateGo('login')}catch(e){gateGo('login',errMsg(e))}},
   gOut:()=>{C.auth.signOut()},
+  gAs:e=>{G.as=e.dataset.k;G.err='';const pin=($('#gPin')||{}).value,em=($('#gEmail')||{}).value,pw=($('#gPass')||{}).value;gateRender();if($('#gPin'))$('#gPin').value=pin||'';if($('#gEmail'))$('#gEmail').value=em||'';if($('#gPass'))$('#gPass').value=pw||''},
   logout:e=>{if(!e.classList.contains('arm')){e.classList.add('arm');e.textContent='もう一度押すとログアウト';setTimeout(()=>{if(e.isConnected){e.classList.remove('arm');e.textContent='ログアウト'}},3000);return}if(C.timer)cloudFlush();C.auth.signOut()},
+  mnNew:e=>mnForm(e.dataset.k,null), mnEdit:e=>mnForm(e.dataset.k,e.dataset.id),
+  mnDel:e=>{if(!e.classList.contains('arm')){e.classList.add('arm');e.textContent='もう一度押すと削除';return}const sq=e.dataset.k;S.liftMenus[sq]=menuOf(sq).filter(x=>x.id!==e.dataset.id);save();closeDrawer();render(false);toast('種目を削除しました')},
+  inbox:()=>inboxDrawer(),
+  inboxGo:e=>{closeDrawer();go(e.dataset.v)},
+  pwaInstall:async()=>{if(!deferredInstall)return;deferredInstall.prompt();try{await deferredInstall.userChoice}catch(e){}deferredInstall=null;render(false)},
+  pushOn:()=>pushOn(),
   memDel:e=>{const id=e.dataset.id,x=P(id)||SF(id);if(!x)return;
     if(id===ui.role){toast('いま使っている人は削除できません');return}
     if(!e.classList.contains('arm')){e.classList.add('arm');e.textContent='もう一度押すと削除';setTimeout(()=>{if(e.isConnected){e.classList.remove('arm');e.textContent='削除'}},3000);return}
@@ -3076,7 +3201,7 @@ const A={
     S.invites[ui.memSq]=newCode();save();render(false);toast('新しい招待リンクにしました。前のリンクは使えなくなります')},
   newPin:e=>{const x=P(e.dataset.id)||SF(e.dataset.id);if(!x)return;x.pin=newPin();save();render(false);toast(`${x.name}の新しい参加番号：${x.pin}`)},
   unjoin:e=>{if(!e.classList.contains('arm')){e.classList.add('arm');e.textContent='もう一度押すと取り消し';setTimeout(()=>{if(e.isConnected){e.classList.remove('arm');e.textContent='付け直す'}},3000);return}
-    const x=P(e.dataset.id)||SF(e.dataset.id);if(!x)return;x.joined=null;x.consent=null;x.pin=newPin();save();if(CLOUD)cloudUnjoin(x.id);render(false);toast(`${x.name}の参加を取り消しました。新しい参加番号：${x.pin}`)},
+    const x=P(e.dataset.id)||SF(e.dataset.id);if(!x)return;x.joined=null;x.gJoined=null;x.consent=null;x.pin=newPin();save();if(CLOUD)cloudUnjoin(x.id);render(false);toast(`${x.name}の参加を取り消しました。新しい参加番号：${x.pin}`)},
   joinDemo:e=>{const sq=e.dataset.k;ui.join={step:'name',code:inviteOf(sq),sq,tries:0};openDrawer('');joinRender()},
   jCode:()=>{const v=($('#jCode').value||'').trim().toUpperCase(),sq=Object.keys(S.invites||{}).find(k=>S.invites[k]===v);if(!sq){ui.join.err='この招待コードは見つかりません。もう一度確かめてください';ui.join.code=v;joinRender();return}ui.join={step:'name',code:v,sq,tries:0};joinRender()},
   jPick:e=>{ui.join=Object.assign(ui.join,{step:'pin',k:e.dataset.k,id:e.dataset.id,err:'',tries:0});joinRender()},
@@ -3215,6 +3340,8 @@ document.addEventListener('change',ev=>{const t=ev.target;
   if(t.dataset.pf){curPlan()[t.dataset.pf]=t.value.trim();save();if(t.dataset.pf==='name'){$('#planCard').innerHTML=planCardInner()}else toast('保存しました')}
 });
 document.addEventListener('submit',ev=>{ev.preventDefault();const f=ev.target;
+  if(f.id==='mnForm'){const sq=f.dataset.k,name=$('#mnName').value.trim();if(!name){toast('種目を入れてください');return}const m=(S.liftMenus=S.liftMenus||{})[sq]=menuOf(sq).slice(),d={name,sets:$('#mnSets').value.trim(),note:$('#mnNote').value.trim()};
+    const id=f.dataset.id;if(id)Object.assign(m.find(x=>x.id===id),d);else m.push(Object.assign({id:uid()},d));save();closeDrawer();render(false);toast('メニューを保存しました');return}
   if(f.id==='evForm'){const g=id=>$('#'+id).value.trim(),err=$('#eErr');const title=g('eTitle'),date=g('eDate');
     if(!title||!date){err.textContent='タイトルと日付を入れてください';err.hidden=false;return}
     const data={sq:$('#eSq').value,kind:$('#eKind').value,title,date,start:g('eStart'),end:g('eEnd'),place:g('ePlace'),meet:g('eMeet'),bring:g('eBring'),note:g('eNote'),ask:$('#eAsk').checked};
@@ -3242,7 +3369,7 @@ document.addEventListener('submit',ev=>{ev.preventDefault();const f=ev.target;
     if(!name){err.textContent='氏名を入力してください';err.hidden=false;return}
     if(!all&&!sqs.length){err.textContent='担当するチームを1つ以上選んでください';err.hidden=false;return}
     if(f.dataset.id===ui.role&&!all&&isAdmin()&&!S.staff.some(s=>s.id!==ui.role&&s.squads==='all')){err.textContent='全チームを見られるスタッフが1人もいなくなるため、変更できません';err.hidden=false;return}
-    const data={name,role:$('#sfRole').value,squads:all?'all':sqs};
+    const data={name,role:$('#sfRole').value,squads:all?'all':sqs,medOK:all||$('#sfMed').checked};
     if(f.dataset.id)Object.assign(SF(f.dataset.id),data);else S.staff.push(Object.assign({id:'s'+Date.now().toString(36),pin:newPin(),joined:null},data));
     save();closeDrawer();render(false);toast('スタッフを保存しました')}
   if(f.id==='medForm'){me().med=readMed();save();closeDrawer();render(false);toast('アレルギー・医療の情報を保存しました')}
@@ -3296,6 +3423,7 @@ const rb=$('#resetBtn');rb.addEventListener('click',()=>{if(!rb.classList.contai
 window.addEventListener('storage',ev=>{if(CLOUD||ev.key!==KEY||!ev.newValue)return;try{const o=JSON.parse(ev.newValue);if(o&&o.v===7&&o.tacticsBy&&o.matches&&o.life&&o.fuel){const typing=document.activeElement&&/INPUT|TEXTAREA/.test(document.activeElement.tagName)&&ui.view!=='chat';S=o;if(!typing)render(false);else renderShell()}}catch(e){}});
 
 function migrate(seeding){
+S.staff.forEach(x=>{if(x.medOK===undefined)x.medOK=x.squads==='all'||['監督','トレーナー','クラブ代表'].includes(x.role)});
 SQ=S.squads.map(q=>q.id);
 try{indexedDB.deleteDatabase('pitchside-videos')}catch(e){}
 if(S.matches&&S.matches.some(mt=>mt.videos||mt.memos.some(m=>m.per===undefined))){S.matches.forEach(mt=>{mt.memos.forEach(m=>{if(m.per===undefined){const v=(mt.videos||[]).find(x=>x.id===m.vid);m.per=v&&/後半/.test(v.title)?'後半':v&&/前半/.test(v.title)?'前半':'';if(m.t&&/:/.test(m.t)){const sec=toSec(m.t);m.t=sec==null?'':String(Math.floor(sec/60))}delete m.vid}});delete mt.videos});save()}
@@ -3316,7 +3444,7 @@ function initExtras(){
   if(!S.rsvp)S.rsvp={};
   if(!S.x2){S.x2=1;seedLineups();S.messages.forEach(m=>{if(m.imp&&!m.read){const r=rng(m.ts%1000);m.read={};chanPlayers(m.ch).forEach(p=>{if(r()<.72)m.read[p.id]=m.ts+36e5})}});;const p=S.players.find(x=>x.squad==='A'&&!activeInj(x.id)&&x.pos==='DF');if(p){S.injuries.push({id:uid(),pid:p.id,part:'脳しんとう（ヘディングの競り合いで頭部を接触）',detail:'受傷当日に脳神経外科を受診。画像検査は異常なし。頭痛は3日目に消失',start:addDays(TODAY,-6),ret:addDays(TODAY,8),status:'active',cc:true,ccStep:2,ccSince:addDays(TODAY,-1),ccDoc1:true,ccLog:[{d:addDays(TODAY,-6),t:'受傷。脳神経外科を受診'},{d:addDays(TODAY,-3),t:'医師の診察を受けた'},{d:addDays(TODAY,-2),t:'ステップ1「症状が出ない範囲の生活」を開始'},{d:addDays(TODAY,-1),t:'ステップ2「軽い有酸素運動」を開始'}]})}}
   save()}
-if(CLOUD)cloudInit();else{migrate();render(true)}
+if(CLOUD){cloudInit();pwaInit()}else{migrate();render(true)}
 })();
 </script>
 

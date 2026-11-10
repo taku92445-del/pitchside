@@ -4,7 +4,12 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function memPath(cid) { return /databases/$(database)/documents/clubs/$(cid)/members/$(request.auth.uid); }
     function isMember(cid) { return signedIn() && exists(memPath(cid)); }
-    function isStaffOf(cid) { return isMember(cid) && get(memPath(cid)).data.role in ['admin', 'staff']; }
+    function role(cid) { return get(memPath(cid)).data.role; }
+    function isStaffOf(cid) { return isMember(cid) && role(cid) in ['admin', 'staff']; }
+    function myPid(cid) { return get(memPath(cid)).data.personId; }
+    function permPath(cid) { return /databases/$(database)/documents/clubs/$(cid)/perm/$(myPid(cid)); }
+    function canMed(cid) { return role(cid) == 'admin' || (exists(permPath(cid)) && get(permPath(cid)).data.v.med == true); }
+    function clubDoc(cid, sub, id) { return /databases/$(database)/documents/clubs/$(cid)/$(sub)/$(id); }
 
     match /users/{uid} {
       allow read, write: if signedIn() && request.auth.uid == uid;
@@ -20,7 +25,7 @@ service cloud.firestore {
     match /clubs/{cid} {
       allow create: if signedIn() && request.resource.data.owner == request.auth.uid;
       allow read: if isMember(cid);
-      allow update: if isMember(cid) && get(memPath(cid)).data.role == 'admin';
+      allow update: if isMember(cid) && role(cid) == 'admin';
 
       match /members/{uid} {
         allow read: if isMember(cid);
@@ -28,9 +33,13 @@ service cloud.firestore {
           (request.resource.data.role == 'admin'
             && getAfter(/databases/$(database)/documents/clubs/$(cid)).data.owner == request.auth.uid)
           || (request.resource.data.role in ['player', 'staff']
-            && exists(/databases/$(database)/documents/clubs/$(cid)/joinkeys/$(request.resource.data.personId + '_' + request.resource.data.pin))
-            && !exists(/databases/$(database)/documents/clubs/$(cid)/claims/$(request.resource.data.personId))
-            && getAfter(/databases/$(database)/documents/clubs/$(cid)/claims/$(request.resource.data.personId)).data.uid == request.auth.uid)
+            && exists(clubDoc(cid, 'joinkeys', request.resource.data.personId + '_' + request.resource.data.pin))
+            && !exists(clubDoc(cid, 'claims', request.resource.data.personId))
+            && getAfter(clubDoc(cid, 'claims', request.resource.data.personId)).data.uid == request.auth.uid)
+          || (request.resource.data.role == 'guardian'
+            && exists(clubDoc(cid, 'joinkeys', request.resource.data.personId + '_' + request.resource.data.pin))
+            && !exists(clubDoc(cid, 'gclaims', request.resource.data.personId))
+            && getAfter(clubDoc(cid, 'gclaims', request.resource.data.personId)).data.uid == request.auth.uid)
         );
         allow update: if false;
         allow delete: if isStaffOf(cid);
@@ -39,7 +48,16 @@ service cloud.firestore {
       match /claims/{pid} {
         allow read: if isMember(cid);
         allow create: if signedIn() && request.resource.data.uid == request.auth.uid
-          && getAfter(/databases/$(database)/documents/clubs/$(cid)/members/$(request.auth.uid)).data.personId == pid;
+          && getAfter(memPath(cid)).data.personId == pid
+          && getAfter(memPath(cid)).data.role in ['admin', 'player', 'staff'];
+        allow delete: if isStaffOf(cid);
+      }
+
+      match /gclaims/{pid} {
+        allow read: if isMember(cid);
+        allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+          && getAfter(memPath(cid)).data.personId == pid
+          && getAfter(memPath(cid)).data.role == 'guardian';
         allow delete: if isStaffOf(cid);
       }
 
@@ -50,6 +68,36 @@ service cloud.firestore {
 
       match /meta/{doc} {
         allow read, write: if isStaffOf(cid);
+      }
+
+      match /perm/{pid} {
+        allow read: if isMember(cid);
+        allow write: if isMember(cid) && role(cid) == 'admin';
+      }
+
+      match /staffonly/{doc} {
+        allow read, write: if isStaffOf(cid);
+      }
+
+      // 個人の記録：s=本人とスタッフ / m=本人と医療情報を許可されたスタッフ / p=本人だけ / d=本人とスタッフの個別連絡
+      match /pd/{id} {
+        allow read: if isMember(cid) && (
+          resource.data.pid == myPid(cid)
+          || (resource.data.kind in ['s', 'd'] && isStaffOf(cid))
+          || (resource.data.kind == 'm' && isStaffOf(cid) && canMed(cid)));
+        allow create: if isMember(cid)
+          && id == request.resource.data.pid + '_' + request.resource.data.kind
+          && request.resource.data.kind in ['s', 'm', 'p', 'd']
+          && (request.resource.data.pid == myPid(cid) || (isStaffOf(cid) && request.resource.data.kind != 'p'));
+        allow update: if isMember(cid)
+          && request.resource.data.pid == resource.data.pid
+          && request.resource.data.kind == resource.data.kind
+          && (resource.data.pid == myPid(cid) || (isStaffOf(cid) && resource.data.kind != 'p'));
+        allow delete: if isStaffOf(cid);
+      }
+
+      match /tokens/{uid} {
+        allow read, write: if isMember(cid) && request.auth.uid == uid;
       }
 
       match /state/{doc} {
